@@ -12,8 +12,11 @@ import {
   Eye,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,106 +25,63 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import { withAuth } from '@/context/auth-context';
-import { formatCurrency, formatNumber } from '@/lib/utils';
-import type { Payment, PaymentFilters } from '@/types';
+import { formatNumber } from '@/lib/utils';
+import { apiClient } from '@/lib/api-client';
+import type { Payment, PaymentFilters, PaymentStats } from '@/types';
 
 /**
  * Payments Management Page
- * Monitor and track all payment transactions across the platform
+ * Monitor and track organization payment transactions
  */
-
-// Mock payment data
-const mockPayments: Payment[] = [
-  {
-    id: 'PAY-001',
-    organizationId: '1',
-    organization: {
-      id: '1',
-      name: 'Kigali Workers Cooperative',
-      registrationNumber: 'KWC-2023-001',
-    } as any,
-    amount: 50000,
-    currency: 'RWF',
-    status: 'PAID',
-    paymentMethod: 'MOBILE_MONEY',
-    transactionId: 'MTN-789456123',
-    description: 'Monthly subscription - Premium Plan',
-    dueDate: '2024-01-31T23:59:59Z',
-    paidAt: '2024-01-30T14:30:00Z',
-    createdAt: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: 'PAY-002',
-    organizationId: '2',
-    organization: {
-      id: '2',
-      name: 'Nyagatare Farmers Union',
-      registrationNumber: 'NFU-2023-002',
-    } as any,
-    amount: 25000,
-    currency: 'RWF',
-    status: 'PENDING',
-    paymentMethod: 'MOBILE_MONEY',
-    transactionId: 'TIG-456789012',
-    description: 'Monthly subscription - Standard Plan',
-    dueDate: '2024-02-01T23:59:59Z',
-    createdAt: '2024-02-01T00:00:00Z',
-  },
-  {
-    id: 'PAY-003',
-    organizationId: '3',
-    organization: {
-      id: '3',
-      name: 'Ubuzima Health Cooperative',
-      registrationNumber: 'UHC-2023-003',
-    } as any,
-    amount: 25000,
-    currency: 'RWF',
-    status: 'FAILED',
-    paymentMethod: 'MOBILE_MONEY',
-    transactionId: 'MTN-234567890',
-    description: 'Monthly subscription - Standard Plan',
-    dueDate: '2024-01-31T23:59:59Z',
-    createdAt: '2024-01-01T00:00:00Z',
-    failureReason: 'Insufficient funds',
-  },
-];
 
 function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [stats, setStats] = useState<PaymentStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filters, setFilters] = useState<PaymentFilters>({
     page: 1,
-    limit: 10,
+    limit: 20,
     search: '',
     status: undefined,
   });
 
   useEffect(() => {
-    const fetchPayments = async () => {
+    const fetchPaymentsAndStats = async () => {
       setLoading(true);
+      setError('');
       try {
-        // Mock delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setPayments(mockPayments);
-      } catch (error) {
-        console.error('Failed to fetch payments:', error);
+        // Fetch payments and stats in parallel
+        const [paymentsResponse, statsResponse] = await Promise.all([
+          apiClient.payments.getOrganizationPayments(filters),
+          apiClient.payments.getOrganizationStats()
+        ]);
+
+        setPayments((paymentsResponse.data as Payment[]) || []);
+        setStats(statsResponse as PaymentStats);
+      } catch (err) {
+        console.error('Failed to fetch payments:', err);
+        setError('Failed to load payments. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPayments();
+    fetchPaymentsAndStats();
   }, [filters]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'PAID':
+      case 'COMPLETED':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'FAILED':
         return <XCircle className="h-4 w-4 text-red-500" />;
       case 'PENDING':
         return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'PROCESSING':
+        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
+      case 'TIMEOUT':
+        return <AlertCircle className="h-4 w-4 text-orange-500" />;
       default:
         return <Clock className="h-4 w-4 text-gray-500" />;
     }
@@ -129,24 +89,49 @@ function PaymentsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PAID':
-        return <Badge variant="success">Paid</Badge>;
+      case 'COMPLETED':
+        return <Badge variant="success">Completed</Badge>;
       case 'FAILED':
         return <Badge variant="destructive">Failed</Badge>;
       case 'PENDING':
         return <Badge variant="warning">Pending</Badge>;
+      case 'PROCESSING':
+        return <Badge variant="secondary">Processing</Badge>;
       case 'CANCELLED':
         return <Badge variant="secondary">Cancelled</Badge>;
-      case 'REFUNDED':
-        return <Badge variant="outline">Refunded</Badge>;
+      case 'TIMEOUT':
+        return <Badge variant="outline">Timeout</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const paidAmount = payments.filter(p => p.status === 'PAID').reduce((sum, payment) => sum + payment.amount, 0);
-  const pendingAmount = payments.filter(p => p.status === 'PENDING').reduce((sum, payment) => sum + payment.amount, 0);
+  const getPaymentMethodName = (method: string) => {
+    switch (method) {
+      case 'MOBILE_MONEY_MTN':
+        return 'MTN MoMo';
+      case 'MOBILE_MONEY_AIRTEL':
+        return 'Airtel Money';
+      case 'BANK_BK':
+        return 'Bank of Kigali';
+      case 'BANK_TRANSFER':
+        return 'Bank Transfer';
+      case 'CREDIT_CARD':
+        return 'Credit Card';
+      default:
+        return method.replace(/_/g, ' ');
+    }
+  };
+
+  // Calculate statistics from API stats or fallback to local calculation
+  const totalAmount = stats?.summary.totalAmount || payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const completedAmount = stats?.statusBreakdown.find(s => s.status === 'COMPLETED')?.totalAmount || 
+    payments.filter(p => p.status === 'COMPLETED').reduce((sum, payment) => sum + payment.amount, 0);
+  const pendingAmount = stats?.statusBreakdown.find(s => s.status === 'PENDING')?.totalAmount || 
+    payments.filter(p => p.status === 'PENDING').reduce((sum, payment) => sum + payment.amount, 0);
+  const totalPayments = stats?.summary.totalPayments || payments.length;
+  const completedPayments = stats?.statusBreakdown.find(s => s.status === 'COMPLETED')?.count || 
+    payments.filter(p => p.status === 'COMPLETED').length;
 
   return (
     <DashboardLayout>
@@ -168,78 +153,114 @@ function PaymentsPage() {
         </div>
 
         {/* Payment Statistics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {error ? (
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-copay-gray">
-                Total Payments
-              </CardTitle>
-              <DollarSign className="h-4 w-4 text-copay-gray" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-copay-navy">
-                {formatCurrency(totalAmount)}
-              </div>
-              <p className="text-xs text-copay-gray">
-                {formatNumber(payments.length)} transactions
-              </p>
+            <CardContent className="flex flex-col items-center justify-center py-8">
+              <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+              <h3 className="text-lg font-medium text-copay-navy mb-2">Failed to load payments</h3>
+              <p className="text-copay-gray mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>Try Again</Button>
             </CardContent>
           </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-copay-gray">
+                  Total Amount
+                </CardTitle>
+                <DollarSign className="h-4 w-4 text-copay-gray" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-copay-navy">
+                  {loading ? (
+                    <div className="h-8 bg-gray-200 rounded animate-pulse w-24"></div>
+                  ) : (
+                    `RWF ${formatNumber(totalAmount)}`
+                  )}
+                </div>
+                <p className="text-xs text-copay-gray">
+                  {loading ? (
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-16 mt-1"></div>
+                  ) : (
+                    `${formatNumber(totalPayments)} transactions`
+                  )}
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-copay-gray">
-                Successful Payments
-              </CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-copay-navy">
-                {formatCurrency(paidAmount)}
-              </div>
-              <p className="text-xs text-copay-gray">
-                {payments.filter(p => p.status === 'PAID').length} paid
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-copay-gray">
+                  Completed Payments
+                </CardTitle>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-copay-navy">
+                  {loading ? (
+                    <div className="h-8 bg-gray-200 rounded animate-pulse w-24"></div>
+                  ) : (
+                    `RWF ${formatNumber(completedAmount)}`
+                  )}
+                </div>
+                <p className="text-xs text-copay-gray">
+                  {loading ? (
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-16 mt-1"></div>
+                  ) : (
+                    `${formatNumber(completedPayments)} completed`
+                  )}
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-copay-gray">
-                Pending Payments
-              </CardTitle>
-              <Clock className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-copay-navy">
-                {formatCurrency(pendingAmount)}
-              </div>
-              <p className="text-xs text-copay-gray">
-                {payments.filter(p => p.status === 'PENDING').length} pending
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-copay-gray">
+                  Pending Payments
+                </CardTitle>
+                <Clock className="h-4 w-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-copay-navy">
+                  {loading ? (
+                    <div className="h-8 bg-gray-200 rounded animate-pulse w-24"></div>
+                  ) : (
+                    `RWF ${formatNumber(pendingAmount)}`
+                  )}
+                </div>
+                <p className="text-xs text-copay-gray">
+                  {loading ? (
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-16 mt-1"></div>
+                  ) : (
+                    `${formatNumber(stats?.statusBreakdown.find(s => s.status === 'PENDING')?.count || 0)} pending`
+                  )}
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-copay-gray">
-                Success Rate
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-copay-navy">
-                {payments.length > 0 
-                  ? Math.round((payments.filter(p => p.status === 'PAID').length / payments.length) * 100)
-                  : 0
-                }%
-              </div>
-              <p className="text-xs text-copay-gray">
-                Payment success rate
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-copay-gray">
+                  Success Rate
+                </CardTitle>
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-copay-navy">
+                  {loading ? (
+                    <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                  ) : (
+                    `${totalPayments > 0 ? Math.round((completedPayments / totalPayments) * 100) : 0}%`
+                  )}
+                </div>
+                <p className="text-xs text-copay-gray">
+                  Payment success rate
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Payments Table */}
         <Card>
@@ -261,7 +282,7 @@ function PaymentsPage() {
                 />
               </div>
               <Select value={filters.status || 'all'} onValueChange={(status) => 
-                setFilters(prev => ({ ...prev, status: status === 'all' ? undefined : status as any }))
+                setFilters(prev => ({ ...prev, status: status === 'all' ? undefined : status as typeof filters.status }))
               }>
                 <SelectTrigger className="w-[180px]">
                   <Filter className="h-4 w-4 mr-2" />
@@ -269,10 +290,12 @@ function PaymentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="PAID">Paid</SelectItem>
+                  <SelectItem value="COMPLETED">Completed</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="PROCESSING">Processing</SelectItem>
                   <SelectItem value="FAILED">Failed</SelectItem>
                   <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                  <SelectItem value="TIMEOUT">Timeout</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -294,8 +317,9 @@ function PaymentsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Payment ID</TableHead>
-                      <TableHead>Organization</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Sender</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Method</TableHead>
@@ -308,22 +332,32 @@ function PaymentsPage() {
                       <TableRow key={payment.id}>
                         <TableCell>
                           <div className="font-mono text-sm">
-                            {payment.id}
+                            {payment.paymentReference}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div>
                             <div className="font-medium text-copay-navy">
-                              {payment.organization.name}
+                              {payment.sender.firstName} {payment.sender.lastName}
                             </div>
                             <div className="text-sm text-copay-gray">
-                              {payment.description}
+                              {payment.sender.phone}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium text-copay-navy">
+                              {payment.paymentType.name}
+                            </div>
+                            <div className="text-sm text-copay-gray">
+                              {payment.cooperative.name}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="font-semibold text-copay-navy">
-                            {formatCurrency(payment.amount)}
+                            RWF {formatNumber(payment.amount)}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -336,7 +370,7 @@ function PaymentsPage() {
                           <div className="flex items-center">
                             <CreditCard className="h-4 w-4 text-copay-gray mr-2" />
                             <span className="text-sm">
-                              {payment.paymentMethod.replace('_', ' ')}
+                              {getPaymentMethodName(payment.paymentMethod)}
                             </span>
                           </div>
                         </TableCell>
@@ -347,8 +381,10 @@ function PaymentsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/payments/${payment.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -356,14 +392,17 @@ function PaymentsPage() {
                   </TableBody>
                 </Table>
 
-                {payments.length === 0 && (
+                {!loading && payments.length === 0 && (
                   <div className="text-center py-8">
                     <CreditCard className="h-12 w-12 text-copay-gray mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-copay-navy mb-2">
                       No payments found
                     </h3>
                     <p className="text-copay-gray">
-                      Payment transactions will appear here once organizations start making payments
+                      {filters.search || filters.status 
+                        ? 'No payments match your current filters. Try adjusting your search criteria.'
+                        : 'Payment transactions will appear here once members start making payments to their cooperatives.'
+                      }
                     </p>
                   </div>
                 )}

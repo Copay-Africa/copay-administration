@@ -110,37 +110,164 @@ export interface SubscriptionPlan {
 
 export interface Payment {
   id: string;
-  organizationId: string;
-  organization: Organization;
   amount: number;
-  currency: string;
   status: PaymentStatus;
-  paymentMethod: PaymentMethod;
-  transactionId: string;
   description: string;
-  dueDate: string;
+  paymentMethod: PaymentMethod;
+  paymentReference: string;
+  paymentType: PaymentType;
+  sender: PaymentSender;
+  cooperative: PaymentCooperative;
+  latestTransaction?: PaymentTransaction;
+  transactions?: PaymentTransaction[];
   paidAt?: string;
   createdAt: string;
-  failureReason?: string;
+  updatedAt: string;
 }
 
-export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
-export type PaymentMethod = "MOBILE_MONEY" | "BANK_TRANSFER" | "CREDIT_CARD";
+export interface PaymentType {
+  id: string;
+  name: string;
+  description: string;
+  amount?: number;
+  amountType?: "FIXED" | "VARIABLE";
+}
+
+export interface PaymentSender {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+}
+
+export interface PaymentCooperative {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  amount: number;
+  status: TransactionStatus;
+  paymentMethod: PaymentMethod;
+  gatewayTransactionId?: string;
+  gatewayReference?: string;
+  gatewayResponse?: Record<string, unknown>;
+  processingStartedAt?: string;
+  processingCompletedAt?: string;
+  failureReason?: string;
+  webhookReceived?: boolean;
+  webhookReceivedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentStats {
+  summary: {
+    totalPayments: number;
+    totalAmount: number;
+    averageAmount: number;
+  };
+  statusBreakdown: Array<{
+    status: PaymentStatus;
+    count: number;
+    totalAmount: number;
+  }>;
+  methodBreakdown: Array<{
+    method: PaymentMethod;
+    count: number;
+    totalAmount: number;
+  }>;
+  recentPayments: Array<{
+    id: string;
+    amount: number;
+    status: PaymentStatus;
+    paymentType: string;
+    sender: string;
+    senderPhone: string;
+    createdAt: string;
+  }>;
+}
+
+export type PaymentStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED" | "TIMEOUT";
+export type TransactionStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED" | "TIMEOUT";
+export type PaymentMethod = 
+  | "MOBILE_MONEY_MTN" 
+  | "MOBILE_MONEY_AIRTEL" 
+  | "BANK_BK" 
+  | "BANK_TRANSFER" 
+  | "CREDIT_CARD";
 
 /**
  * Tenant related types
  */
 export interface Tenant {
   id: string;
-  organizationId: string;
-  organization: Organization;
-  memberCount: number;
-  storageUsed: number; // in MB
-  apiCallsThisMonth: number;
-  subscriptionStatus: "ACTIVE" | "SUSPENDED" | "CANCELLED";
-  lastActivityAt: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  status: TenantStatus;
+  cooperativeId: string;
+  cooperative?: {
+    id: string;
+    name: string;
+    code: string;
+    location?: string;
+  };
+  paymentStats?: {
+    totalPayments: number;
+    totalAmount: number;
+    averageAmount: number;
+    lastPaymentDate?: string;
+  };
+  complaintCount?: number;
+  recentPayments?: Array<{
+    id: string;
+    amount: number;
+    status: PaymentStatus;
+    createdAt: string;
+  }>;
+  lastLoginAt?: string;
   createdAt: string;
+  updatedAt: string;
 }
+
+export interface TenantStats {
+  total: number;
+  active: number;
+  inactive: number;
+  byCooperative: Array<{
+    cooperativeId: string;
+    cooperativeName: string;
+    count: number;
+  }>;
+  recentRegistrations: number;
+}
+
+export interface CreateTenantRequest {
+  phone: string;
+  pin: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  cooperativeId: string;
+  notes?: string;
+}
+
+export interface UpdateTenantRequest {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  email?: string;
+  status?: TenantStatus;
+  cooperativeId?: string;
+  pin?: string;
+}
+
+export type TenantStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
 /**
  * Onboarding Request types
@@ -207,7 +334,7 @@ export interface SystemUser {
   permissions: Permission[];
 }
 
-export type UserRole = "SUPER_ADMIN" | "ADMIN" | "SUPPORT" | "AUDITOR";
+export type UserRole = "SUPER_ADMIN" | "ORGANIZATION_ADMIN" | "TENANT";
 
 /**
  * Analytics and Dashboard types
@@ -293,9 +420,143 @@ export interface OrganizationFilters extends BaseFilters {
 
 export interface PaymentFilters extends BaseFilters {
   status?: PaymentStatus;
-  organizationId?: string;
+  paymentMethod?: PaymentMethod;
+  senderId?: string;
+  paymentTypeId?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface PaymentStatsFilters {
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface TenantFilters extends BaseFilters {
+  status?: TenantStatus;
+  cooperativeId?: string;
   dateFrom?: string;
   dateTo?: string;
-  minAmount?: number;
-  maxAmount?: number;
+}
+
+/**
+ * Account Request related types
+ */
+export type AccountRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface AccountRequest {
+  id: string;
+  fullName: string;
+  phone: string;
+  roomNumber: string;
+  status: AccountRequestStatus;
+  cooperativeId: string;
+  cooperative?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  notes?: string;
+  rejectionReason?: string;
+  processedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  processedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAccountRequestData {
+  fullName: string;
+  phone: string;
+  roomNumber: string;
+}
+
+export interface ProcessAccountRequestData {
+  action: 'APPROVE' | 'REJECT';
+  notes?: string;
+  rejectionReason?: string;
+}
+
+export interface AccountRequestFilters extends BaseFilters {
+  status?: AccountRequestStatus;
+  cooperativeId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface AccountRequestStats {
+  total: number;
+  byStatus: Array<{
+    status: AccountRequestStatus;
+    count: number;
+  }>;
+  recentRequests: AccountRequest[];
+}
+
+export interface AvailabilityCheck {
+  phone?: boolean;
+  roomNumber?: boolean;
+}
+
+/**
+ * User Management related types
+ */
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+
+export interface User {
+  id: string;
+  phone: string;
+  email?: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  status: UserStatus;
+  isActive: boolean;
+  cooperativeId?: string;
+  cooperative?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  lastLoginAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUserData {
+  phone: string;
+  pin: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  role: UserRole;
+  cooperativeId?: string;
+}
+
+export interface UpdateUserStatusData {
+  isActive: boolean;
+}
+
+export interface UserFilters extends BaseFilters {
+  role?: UserRole;
+  status?: UserStatus;
+  cooperativeId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface UserStats {
+  total: number;
+  byRole: Array<{
+    role: UserRole;
+    count: number;
+  }>;
+  byStatus: Array<{
+    status: UserStatus;
+    count: number;
+  }>;
+  recentUsers: User[];
 }

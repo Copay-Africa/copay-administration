@@ -7,6 +7,20 @@ import type {
   ApiResponse,
   PaginatedResponse,
   SuperAdmin,
+  TenantFilters,
+  CreateTenantRequest,
+  UpdateTenantRequest,
+  AccountRequest,
+  AccountRequestFilters,
+  AccountRequestStats,
+  CreateAccountRequestData,
+  ProcessAccountRequestData,
+  AvailabilityCheck,
+  User,
+  UserFilters,
+  UserStats,
+  CreateUserData,
+  UpdateUserStatusData,
 } from "@/types";
 
 /**
@@ -86,7 +100,7 @@ class ApiClient {
   private getAccessToken(): string | undefined {
     // First try cookies
     let token = Cookies.get("copay_access_token");
-    
+
     // If not found in cookies, try localStorage
     if (!token && typeof window !== "undefined") {
       const tokenData = this.getStoredTokenData();
@@ -100,7 +114,7 @@ class ApiClient {
         });
       }
     }
-    
+
     return token;
   }
 
@@ -110,7 +124,7 @@ class ApiClient {
   private getRefreshToken(): string | undefined {
     // First try cookies
     let token = Cookies.get("copay_refresh_token");
-    
+
     // If not found in cookies, try localStorage
     if (!token && typeof window !== "undefined") {
       const tokenData = this.getStoredTokenData();
@@ -124,7 +138,7 @@ class ApiClient {
         });
       }
     }
-    
+
     return token;
   }
 
@@ -138,7 +152,7 @@ class ApiClient {
     refreshExpiresAt: number;
   } | null {
     if (typeof window === "undefined") return null;
-    
+
     try {
       const tokenData = localStorage.getItem("copay_tokens");
       return tokenData ? JSON.parse(tokenData) : null;
@@ -227,11 +241,11 @@ class ApiClient {
 
       // Handle the actual API response format (same as login)
       const responseData = response.data;
-      
+
       if (responseData.accessToken) {
         const expiresIn = responseData.expiresIn || 604800; // Default 7 days
         const newRefreshToken = responseData.refreshToken || refreshToken;
-        
+
         this.setTokens(responseData.accessToken, newRefreshToken, expiresIn);
         console.log("Token refreshed successfully");
         return true;
@@ -344,7 +358,7 @@ class ApiClient {
   isAuthenticated(): boolean {
     const token = this.getAccessToken();
     if (!token) return false;
-    
+
     // Check if token is expired
     const tokenData = this.getStoredTokenData();
     if (tokenData && tokenData.expiresAt <= Date.now()) {
@@ -358,7 +372,7 @@ class ApiClient {
       // The refresh will be handled by the interceptor
       return true;
     }
-    
+
     return true;
   }
 
@@ -496,26 +510,131 @@ class ApiClient {
     delete: (id: string) => this.delete(`/cooperatives/${id}`),
     // Admin management for cooperatives
     createAdmin: (data: any) => this.post("/users", data),
-    getAdmins: (cooperativeId: string) => this.get(`/cooperatives/${cooperativeId}/admins`),
+    getAdmins: (cooperativeId: string) =>
+      this.get(`/cooperatives/${cooperativeId}/admins`),
   };
 
   /**
    * Payments API
    */
   payments = {
+    // General payment endpoints (SUPER_ADMIN)
     getAll: (filters?: any) => this.getPaginated("/payments", filters),
     getById: (id: string) => this.get(`/payments/${id}`),
-    getByOrganization: (orgId: string, filters?: any) =>
-      this.getPaginated(`/organizations/${orgId}/payments`, filters),
+
+    // Organization payment endpoints (ORGANIZATION_ADMIN + SUPER_ADMIN)
+    getOrganizationPayments: (filters?: any) =>
+      this.getPaginated("/payments/organization", filters),
+    getOrganizationPaymentById: (id: string) =>
+      this.get(`/payments/organization/${id}`),
+    getOrganizationStats: (filters?: any) =>
+      this.get("/payments/organization/stats", filters),
   };
 
   /**
-   * Tenants API
+   * Tenants API (Super Admin Only)
+   * Complete tenant management across all cooperatives
    */
   tenants = {
-    getAll: (filters?: any) => this.getPaginated("/tenants", filters),
-    getById: (id: string) => this.get(`/tenants/${id}`),
-    getUsage: (id: string) => this.get(`/tenants/${id}/usage`),
+    /**
+     * Get all tenants across all cooperatives with advanced filtering
+     * GET /api/v1/users/tenants
+     */
+    getAll: (filters?: TenantFilters) =>
+      this.getPaginated("/users/tenants", filters),
+
+    /**
+     * Get tenant statistics dashboard data
+     * GET /api/v1/users/tenants/stats
+     */
+    getStats: () => this.get("/users/tenants/stats"),
+
+    /**
+     * Create a new tenant and assign to a cooperative
+     * POST /api/v1/users/tenants
+     */
+    create: (data: CreateTenantRequest) => this.post("/users/tenants", data),
+
+    /**
+     * Get detailed tenant information with payment stats and complaint history
+     * GET /api/v1/users/tenants/:id
+     */
+    getById: (id: string) => this.get(`/users/tenants/${id}`),
+
+    /**
+     * Update tenant information, status, or migrate between cooperatives
+     * PATCH /api/v1/users/tenants/:id
+     */
+    update: (id: string, data: UpdateTenantRequest) =>
+      this.patch(`/users/tenants/${id}`, data),
+
+    /**
+     * Delete tenant (soft delete if has payment history, hard delete otherwise)
+     * DELETE /api/v1/users/tenants/:id
+     */
+    remove: (id: string) => this.delete(`/users/tenants/${id}`),
+  };
+
+  /**
+   * Account Requests API
+   */
+  accountRequests = {
+    /**
+     * Get all account requests with role-based filtering
+     */
+    getAll: (filters?: AccountRequestFilters) =>
+      this.getPaginated("/account-requests", filters),
+
+    /**
+     * Get account requests for organization admin
+     */
+    getOrganizationRequests: (filters?: AccountRequestFilters) =>
+      this.getPaginated("/organization/account-requests", filters),
+
+    /**
+     * Get all account requests for super admin
+     */
+    getAdminRequests: (filters?: AccountRequestFilters) =>
+      this.getPaginated("/admin/account-requests", filters),
+
+    /**
+     * Get account request by ID
+     */
+    getById: (id: string) => this.get(`/account-requests/${id}`),
+
+    /**
+     * Create account request (public endpoint)
+     */
+    create: (cooperativeId: string, data: CreateAccountRequestData) =>
+      this.post(`/account-requests/${cooperativeId}`, data),
+
+    /**
+     * Process account request (approve/reject)
+     */
+    process: (id: string, data: ProcessAccountRequestData) =>
+      this.put(`/account-requests/${id}/process`, data),
+
+    /**
+     * Delete account request
+     */
+    remove: (id: string) => this.delete(`/account-requests/${id}`),
+
+    /**
+     * Get account request statistics
+     */
+    getStats: (cooperativeId?: string) =>
+      this.get(
+        "/account-requests/stats",
+        cooperativeId ? { cooperativeId } : {}
+      ),
+
+    /**
+     * Check availability (public endpoint)
+     */
+    checkAvailability: (
+      cooperativeId: string,
+      params: { phone?: string; roomNumber?: string }
+    ) => this.get(`/account-requests/${cooperativeId}/availability`, params),
   };
 
   /**
@@ -547,12 +666,37 @@ class ApiClient {
    * Users API
    */
   users = {
-    getAll: (filters?: any) => this.getPaginated("/users", filters),
+    /**
+     * Get all users with filtering
+     */
+    getAll: (filters?: UserFilters) => this.getPaginated("/users", filters),
+
+    /**
+     * Get user by ID
+     */
     getById: (id: string) => this.get(`/users/${id}`),
-    create: (data: any) => this.post("/users", data),
-    update: (id: string, data: any) => this.put(`/users/${id}`, data),
-    suspend: (id: string) => this.post(`/users/${id}/suspend`),
-    activate: (id: string) => this.post(`/users/${id}/activate`),
+
+    /**
+     * Create new user
+     */
+    create: (data: CreateUserData) => this.post("/users", data),
+
+    /**
+     * Update user status (activate/deactivate)
+     */
+    updateStatus: (id: string, data: UpdateUserStatusData) =>
+      this.patch(`/users/${id}/status`, data),
+
+    /**
+     * Get user statistics
+     */
+    getStats: (cooperativeId?: string) =>
+      this.get("/users/stats", cooperativeId ? { cooperativeId } : {}),
+
+    /**
+     * Delete user
+     */
+    remove: (id: string) => this.delete(`/users/${id}`),
   };
 
   /**

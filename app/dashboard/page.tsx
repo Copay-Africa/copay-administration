@@ -394,15 +394,15 @@ function DashboardPage() {
                 </Link>
                 
                 <Link 
-                  href="/users"
+                  href="/tenants"
                   className="group p-4 text-left border-2 border-gray-200 rounded-xl hover:border-copay-blue hover:bg-copay-light-blue transition-all duration-200"
                 >
                   <Users className="h-6 w-6 text-copay-navy mb-3 group-hover:text-copay-blue" />
                   <p className="text-sm font-semibold text-copay-navy group-hover:text-copay-blue">
-                    User Management
+                    Manage Tenants
                   </p>
                   <p className="text-xs text-copay-gray mt-1">
-                    Manage user accounts
+                    Cross-cooperative access
                   </p>
                 </Link>
                 
