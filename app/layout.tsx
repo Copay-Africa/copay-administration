@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { AuthProvider } from "@/context/auth-context";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Co-Pay Super Admin Portal",
+  title: "Copay Super Admin Portal",
   description: "Centralized dashboard for platform administrators to manage cooperatives, monitor payments, and handle system configurations.",
-  keywords: "Co-Pay, admin, cooperative, fintech, payment management",
+  keywords: "Copay, admin, cooperative, fintech, payment management",
 };
 
 export default function RootLayout({
@@ -22,7 +16,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} antialiased`}
+        className="font-sans antialiased"
+        suppressHydrationWarning
       >
         <AuthProvider>
           {children}

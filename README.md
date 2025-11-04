@@ -20,7 +20,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-# Co-Pay Super Admin Portal
+# Copay Super Admin Portal
 
 A comprehensive dashboard for platform administrators to manage cooperatives, monitor payments, approve onboardings, and handle system configurations. Built with Next.js 16 (App Router), TypeScript, and shadcn/ui components.
 
@@ -105,7 +105,7 @@ A comprehensive dashboard for platform administrators to manage cooperatives, mo
    Update the `.env.local` file with your configuration:
    ```env
    NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
-   NEXT_PUBLIC_APP_NAME=Co-Pay Super Admin
+   NEXT_PUBLIC_APP_NAME=Copay Super Admin
    NODE_ENV=development
    ```
 
@@ -179,7 +179,7 @@ copay-admin/
 - **Interactive**: Blue highlights (`text-copay-blue`)
 
 ### Components
-All components follow the shadcn/ui design system with Co-Pay specific theming:
+All components follow the shadcn/ui design system with Copay specific theming:
 - **Buttons**: Navy primary, outline variants
 - **Cards**: Clean white surfaces with subtle shadows
 - **Tables**: Responsive with hover states
@@ -315,7 +315,7 @@ For support and questions:
 
 ---
 
-**Co-Pay Super Admin Portal** - Empowering cooperative management through technology 🚀
+**Copay Super Admin Portal** - Empowering cooperative management through technology 🚀
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 

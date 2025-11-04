@@ -1,4 +1,4 @@
-// Type definitions for the Co-Pay Super Admin system
+// Type definitions for the Copay Super Admin system
 
 /**
  * Authentication related types
@@ -298,22 +298,41 @@ export interface Document {
 }
 
 /**
- * Announcement types
+ * Announcement types (Enhanced for API)
  */
 export interface Announcement {
   id: string;
   title: string;
-  content: string;
-  type: AnnouncementType;
-  priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  targetAudience: "ALL" | "SPECIFIC_ORGS";
-  targetOrganizationIds?: string[];
-  publishedAt?: string;
+  message: string;
+  targetType: AnnouncementTargetType;
+  targetCooperativeIds?: string[];
+  targetUserIds?: string[];
+  notificationTypes: NotificationType[];
+  priority: AnnouncementPriority;
+  status: AnnouncementStatus;
+  scheduledFor?: string;
+  sentAt?: string;
   expiresAt?: string;
-  status: "DRAFT" | "PUBLISHED" | "EXPIRED";
-  createdBy: string;
+  estimatedRecipientsCount?: number;
+  actualRecipientsCount?: number;
+  deliveryStats?: {
+    [key in NotificationType]?: {
+      sent: number;
+      delivered: number;
+      failed: number;
+    };
+  };
+  createdBy: {
+    id: string;
+    name: string;
+    role: UserRole;
+  };
+  cooperative?: {
+    id: string;
+    name: string;
+  };
   createdAt: string;
-  viewCount: number;
+  updatedAt: string;
 }
 
 export type AnnouncementType = "MAINTENANCE" | "FEATURE_UPDATE" | "POLICY_CHANGE" | "GENERAL";
@@ -559,4 +578,300 @@ export interface UserStats {
     count: number;
   }>;
   recentUsers: User[];
+}
+
+/**
+ * Activity Management types
+ */
+export type ActivityType = 
+  | 'LOGIN' | 'LOGOUT' | 'LOGIN_FAILED' | 'PASSWORD_RESET'
+  | 'PAYMENT_CREATED' | 'PAYMENT_COMPLETED' | 'PAYMENT_FAILED'
+  | 'USER_CREATED' | 'USER_UPDATED' | 'USER_DELETED'
+  | 'ORGANIZATION_CREATED' | 'ORGANIZATION_UPDATED' | 'ORGANIZATION_APPROVED'
+  | 'TENANT_CREATED' | 'TENANT_UPDATED' | 'TENANT_DELETED'
+  | 'ACCOUNT_REQUEST_CREATED' | 'ACCOUNT_REQUEST_PROCESSED'
+  | 'COMPLAINT_CREATED' | 'COMPLAINT_UPDATED' | 'COMPLAINT_RESOLVED'
+  | 'REMINDER_CREATED' | 'REMINDER_SENT' | 'REMINDER_FAILED'
+  | 'ANNOUNCEMENT_CREATED' | 'ANNOUNCEMENT_SENT'
+  | 'SUSPICIOUS_LOGIN' | 'MULTIPLE_FAILED_LOGINS' | 'UNAUTHORIZED_ACCESS'
+  | 'ACCOUNT_LOCKED' | 'PASSWORD_RESET_REQUESTED' | 'PASSWORD_CHANGED'
+  | 'SYSTEM_BACKUP' | 'SYSTEM_MAINTENANCE' | 'DATA_EXPORT';
+
+export type EntityType = 'USER' | 'PAYMENT' | 'COOPERATIVE' | 'REMINDER' | 'SYSTEM' | 'COMPLAINT' | 'ANNOUNCEMENT';
+
+export interface Activity {
+  id: string;
+  type: ActivityType;
+  description: string;
+  entityType: EntityType;
+  entityId: string;
+  userId: string;
+  cooperativeId?: string;
+  metadata?: Record<string, unknown>;
+  ipAddress?: string;
+  userAgent?: string;
+  isSecurityEvent: boolean;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    role: UserRole;
+  };
+  cooperative?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  createdAt: string;
+}
+
+export interface ActivityFilters extends BaseFilters {
+  type?: ActivityType;
+  entityType?: EntityType;
+  entityId?: string;
+  userId?: string;
+  cooperativeId?: string;
+  fromDate?: string;
+  toDate?: string;
+  isSecurityEvent?: boolean;
+}
+
+export interface ActivityStats {
+  total: number;
+  byType: {
+    type: ActivityType;
+    count: number;
+  }[];
+  byEntityType: {
+    entityType: EntityType;
+    count: number;
+  }[];
+  securityEvents: number;
+  last24Hours: number;
+  last7Days: number;
+}
+
+/**
+ * Notification Management types
+ */
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'PAYMENT_DUE' | 'PAYMENT_OVERDUE' | 'PAYMENT_RECEIVED' | 'ACCOUNT_UPDATE' | 'SYSTEM_ALERT' | 'ANNOUNCEMENT';
+  isRead: boolean;
+  createdAt: string;
+  readAt?: string;
+  reminder?: {
+    id: string;
+    title: string;
+    type: string;
+  };
+  payment?: {
+    id: string;
+    amount: number;
+    status: string;
+  };
+}
+
+export interface NotificationFilters extends BaseFilters {
+  read?: boolean;
+  type?: string;
+}
+
+/**
+ * Reminder Management types
+ */
+export type ReminderType = 'PAYMENT_DUE' | 'PAYMENT_OVERDUE' | 'CUSTOM';
+export type ReminderStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
+export type NotificationType = 'SMS' | 'EMAIL' | 'IN_APP' | 'PUSH_NOTIFICATION';
+export type RecurringPattern = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+
+export interface Reminder {
+  id: string;
+  title: string;
+  description?: string;
+  type: ReminderType;
+  status: ReminderStatus;
+  userId: string;
+  paymentTypeId?: string;
+  reminderDate: string;
+  isRecurring: boolean;
+  recurringPattern?: RecurringPattern;
+  notificationTypes: NotificationType[];
+  advanceNoticeDays?: number;
+  customAmount?: number;
+  notes?: string;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+  };
+  paymentType?: {
+    id: string;
+    name: string;
+    description: string;
+    amount: number;
+  };
+  cooperative?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateReminderData {
+  title: string;
+  description?: string;
+  type: ReminderType;
+  paymentTypeId?: string;
+  reminderDate: string;
+  isRecurring?: boolean;
+  recurringPattern?: RecurringPattern;
+  notificationTypes: NotificationType[];
+  advanceNoticeDays?: number;
+  customAmount?: number;
+  notes?: string;
+}
+
+export interface ReminderFilters extends BaseFilters {
+  type?: ReminderType;
+  status?: ReminderStatus;
+  paymentTypeId?: string;
+  fromDate?: string;
+  toDate?: string;
+  isRecurring?: boolean;
+  isDue?: boolean;
+}
+
+export interface ReminderStats {
+  total: number;
+  active: number;
+  paused: number;
+  completed: number;
+  byType: {
+    type: ReminderType;
+    count: number;
+  }[];
+  dueToday: number;
+  overdue: number;
+  recurring: number;
+}
+
+/**
+ * Complaint Management types
+ */
+export type ComplaintStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export type ComplaintPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+export interface Complaint {
+  id: string;
+  title: string;
+  description: string;
+  status: ComplaintStatus;
+  priority: ComplaintPriority;
+  resolution?: string;
+  resolvedAt?: string;
+  attachments?: {
+    filename: string;
+    url: string;
+    size: number;
+    contentType: string;
+  }[];
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+  };
+  cooperative: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateComplaintData {
+  cooperativeId?: string;
+  title: string;
+  description: string;
+  priority?: ComplaintPriority;
+  attachments?: {
+    filename: string;
+    url: string;
+    size: number;
+    contentType: string;
+  }[];
+}
+
+export interface UpdateComplaintStatusData {
+  status: ComplaintStatus;
+  resolution?: string;
+}
+
+export interface ComplaintFilters extends BaseFilters {
+  status?: ComplaintStatus;
+  priority?: ComplaintPriority;
+  userId?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface ComplaintStats {
+  total: number;
+  byStatus: {
+    status: ComplaintStatus;
+    count: number;
+  }[];
+  byPriority: {
+    priority: ComplaintPriority;
+    count: number;
+  }[];
+  recentComplaints: Complaint[];
+}
+
+/**
+ * Announcement Management types
+ */
+export type AnnouncementStatus = 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'SENT' | 'CANCELLED';
+export type AnnouncementPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type AnnouncementTargetType = 'ALL_TENANTS' | 'ALL_ORGANIZATION_ADMINS' | 'SPECIFIC_COOPERATIVE' | 'SPECIFIC_USERS';
+
+export interface CreateAnnouncementData {
+  title: string;
+  message: string;
+  targetType: AnnouncementTargetType;
+  targetCooperativeIds?: string[];
+  targetUserIds?: string[];
+  notificationTypes: NotificationType[];
+  priority?: AnnouncementPriority;
+  scheduledFor?: string;
+  expiresAt?: string;
+}
+
+export interface AnnouncementFilters extends BaseFilters {
+  status?: AnnouncementStatus;
+  priority?: AnnouncementPriority;
+  targetType?: AnnouncementTargetType;
+}
+
+export interface AnnouncementStats {
+  totalAnnouncements: number;
+  statusBreakdown: {
+    [key in AnnouncementStatus]: number;
+  };
+  priorityBreakdown: {
+    [key in AnnouncementPriority]: number;
+  };
+  totalRecipientsReached: number;
+  last30Days: {
+    announcementsSent: number;
+    recipientsReached: number;
+  };
 }

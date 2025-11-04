@@ -16,7 +16,12 @@ import {
   X,
   LogOut,
   Shield,
-  ChevronDown
+  ChevronDown,
+  Activity,
+  Bell,
+  MessageSquare,
+  Mail,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
@@ -31,6 +36,36 @@ const navigationItems = [
     href: '/dashboard',
     icon: LayoutDashboard,
     description: 'Overview and analytics'
+  },
+  {
+    name: 'Analytics',
+    href: '/analytics',
+    icon: BarChart3,
+    description: 'Reports & data insights'
+  },
+  {
+    name: 'Activities',
+    href: '/activities',
+    icon: Activity,
+    description: 'Audit logs & security'
+  },
+  {
+    name: 'Audit Trail',
+    href: '/audit-trail',
+    icon: Shield,
+    description: 'Security & audit logging'
+  },
+  {
+    name: 'Complaints',
+    href: '/complaints',
+    icon: MessageSquare,
+    description: 'Issue management & resolution'
+  },
+  {
+    name: 'Notifications',
+    href: '/notifications',
+    icon: Mail,
+    description: 'Message center & delivery tracking'
   },
   {
     name: 'Organizations',
@@ -82,7 +117,7 @@ interface DashboardLayoutProps {
 
 /**
  * Main Dashboard Layout Component
- * Premium fintech sidebar design with Co-Pay branding
+ * Premium fintech sidebar design with Copay branding
  */
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -127,7 +162,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Shield className="h-5 w-5 text-copay-navy" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">Co-Pay</h1>
+              <h1 className="text-lg font-bold text-white">Copay</h1>
               <p className="text-xs text-copay-light-blue">Admin Portal</p>
             </div>
           </div>
@@ -248,7 +283,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
             <div className="flex items-center space-x-4">
               {/* Time display - hidden on small screens */}
-              <div className="text-sm text-copay-gray hidden md:block">
+              <div className="text-sm text-copay-gray hidden md:block" suppressHydrationWarning>
                 {new Date().toLocaleDateString('en-US', {
                   weekday: 'short',
                   month: 'short',

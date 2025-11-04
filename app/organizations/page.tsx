@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
+import {
   Search,
   Filter,
   Plus,
@@ -32,7 +32,7 @@ import type { Organization, OrganizationFilters } from '@/types';
  * Displays and manages all registered cooperatives in the system
  */
 
-// Mock data for organizations - will be replaced with actual API calls
+// Fallback data for organizations in case of API failure
 const mockOrganizations: Organization[] = [
   {
     id: '1',
@@ -150,10 +150,10 @@ function OrganizationsPage() {
   };
 
   const handleStatusFilter = (status: string) => {
-    setFilters(prev => ({ 
-      ...prev, 
+    setFilters(prev => ({
+      ...prev,
       status: status === 'all' ? undefined : (status as 'ACTIVE' | 'SUSPENDED' | 'PENDING_APPROVAL' | 'REJECTED'),
-      page: 1 
+      page: 1
     }));
   };
 
@@ -205,8 +205,8 @@ function OrganizationsPage() {
                 <DialogHeader>
                   <DialogTitle>Create New Organization</DialogTitle>
                 </DialogHeader>
-                <CreateOrganizationForm 
-                  onSuccess={handleOrganizationCreated} 
+                <CreateOrganizationForm
+                  onSuccess={handleOrganizationCreated}
                   onCancel={() => setIsCreateDialogOpen(false)}
                 />
               </DialogContent>
@@ -409,7 +409,7 @@ function OrganizationsPage() {
                       No organizations found
                     </h3>
                     <p className="text-copay-gray">
-                      {filters.search || filters.status 
+                      {filters.search || filters.status
                         ? 'Try adjusting your search or filters'
                         : 'Start by adding your first organization'
                       }

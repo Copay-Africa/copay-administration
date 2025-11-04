@@ -113,7 +113,7 @@ export default function LoginPage() {
           <div className="mx-auto h-16 w-16 bg-copay-navy rounded-full flex items-center justify-center mb-4">
             <Shield className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-copay-navy">Co-Pay Admin</h1>
+          <h1 className="text-3xl font-bold text-copay-navy">Copay Admin</h1>
           <p className="text-copay-gray mt-2">Super Administrator Portal</p>
         </div>
 

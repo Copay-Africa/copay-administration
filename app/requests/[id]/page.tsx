@@ -53,11 +53,69 @@ function AccountRequestDetailPage() {
             setError('');
 
             try {
+                console.log('Fetching account request with ID:', requestId);
+                console.log('API Base URL:', process.env.NEXT_PUBLIC_API_URL);
+                
+                // Check authentication
+                const token = document.cookie.split(';').find(c => c.trim().startsWith('copay_access_token='));
+                console.log('Auth token exists:', !!token);
+                if (token) {
+                    console.log('Token length:', token.split('=')[1]?.length);
+                }
+                
+                // Test direct API call
+                const directUrl = `https://copay-six.vercel.app/api/v1/account-requests/${requestId}`;
+                console.log('Direct API URL:', directUrl);
+                
+                try {
+                    const directResponse = await fetch(directUrl, {
+                        headers: {
+                            'Authorization': `Bearer ${token?.split('=')[1]}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    console.log('Direct fetch status:', directResponse.status);
+                    console.log('Direct fetch ok:', directResponse.ok);
+                    
+                    if (directResponse.ok) {
+                        const directData = await directResponse.json();
+                        console.log('Direct fetch data:', directData);
+                    }
+                } catch (directErr) {
+                    console.log('Direct fetch error:', directErr);
+                }
+                
                 const response = await apiClient.accountRequests.getById(requestId);
-                setRequest(response as AccountRequest);
-            } catch (err) {
+                console.log('API Response received:', response);
+                console.log('Response type:', typeof response);
+                console.log('Response keys:', response ? Object.keys(response) : 'null');
+                
+                // The API client already unwraps the data, so response is the AccountRequest object
+                if (response) {
+                    setRequest(response as AccountRequest);
+                    console.log('Account request set successfully');
+                } else {
+                    throw new Error('No data received from API');
+                }
+            } catch (err: unknown) {
                 console.error('Failed to fetch request:', err);
-                setError('Failed to load account request details. Please try again.');
+                
+                // More detailed error handling
+                const error = err as any;
+                console.log('Full error object:', error);
+                console.log('Error response:', error.response);
+                console.log('Error status:', error.response?.status);
+                console.log('Error data:', error.response?.data);
+                
+                if (error.response?.status === 404) {
+                    setError('Account request not found. It may have been deleted or you don\'t have permission to view it.');
+                } else if (error.response?.status === 500) {
+                    setError('Server error occurred while fetching the account request. Please try again later.');
+                } else if (error.response?.status === 403) {
+                    setError('You don\'t have permission to view this account request.');
+                } else {
+                    setError(`Failed to load account request: ${error.message || 'Unknown error'}`);
+                }
             } finally {
                 setLoading(false);
             }

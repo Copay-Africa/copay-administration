@@ -31,7 +31,7 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
     
-    /* Custom Co-Pay colors */
+    /* Custom Copay colors */
     --copay-navy: 221.2 83.2% 53.3%;
     --copay-blue: 213 93% 68%;
     --copay-light-blue: 213 93% 95%;
@@ -81,7 +81,7 @@
   }
 }
 
-/* Custom utility classes for Co-Pay branding */
+/* Custom utility classes for Copay branding */
 @layer utilities {
   .text-copay-navy {
     color: hsl(var(--copay-navy));

@@ -51,7 +51,7 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Co-Pay custom colors
+        // Copay custom colors
         copay: {
           navy: "hsl(var(--copay-navy))",
           blue: "hsl(var(--copay-blue))",

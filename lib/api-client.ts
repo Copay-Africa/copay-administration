@@ -10,21 +10,25 @@ import type {
   TenantFilters,
   CreateTenantRequest,
   UpdateTenantRequest,
-  AccountRequest,
   AccountRequestFilters,
-  AccountRequestStats,
   CreateAccountRequestData,
   ProcessAccountRequestData,
-  AvailabilityCheck,
-  User,
   UserFilters,
-  UserStats,
   CreateUserData,
   UpdateUserStatusData,
+  ActivityFilters,
+  NotificationFilters,
+  ReminderFilters,
+  CreateReminderData,
+  ComplaintFilters,
+  CreateComplaintData,
+  UpdateComplaintStatusData,
+  AnnouncementFilters,
+  CreateAnnouncementData,
 } from "@/types";
 
 /**
- * API Client for Co-Pay Super Admin Backend
+ * API Client for Copay Super Admin Backend
  * Handles authentication, token management, and API requests
  */
 class ApiClient {
@@ -106,7 +110,7 @@ class ApiClient {
       const tokenData = this.getStoredTokenData();
       if (tokenData && tokenData.expiresAt > Date.now()) {
         token = tokenData.accessToken;
-        // Restore to cookies if found in localStorage
+
         Cookies.set("copay_access_token", token, {
           expires: new Date(tokenData.expiresAt),
           secure: process.env.NODE_ENV === "production",
@@ -515,6 +519,23 @@ class ApiClient {
   };
 
   /**
+   * Payment Types API (Public - No Auth Required)
+   */
+  paymentTypes = {
+    // Public endpoints - no auth required
+    getAll: (filters?: any) => this.getPaginated("/payment-types", filters),
+    getActive: (cooperativeId: string) =>
+      this.get(`/payment-types/active?cooperativeId=${cooperativeId}`),
+    getById: (id: string, cooperativeId: string) =>
+      this.get(`/payment-types/${id}?cooperativeId=${cooperativeId}`),
+
+    // Authenticated endpoints for management
+    create: (data: any) => this.post("/payment-types", data),
+    update: (id: string, data: any) => this.put(`/payment-types/${id}`, data),
+    delete: (id: string) => this.delete(`/payment-types/${id}`),
+  };
+
+  /**
    * Payments API
    */
   payments = {
@@ -651,18 +672,6 @@ class ApiClient {
   };
 
   /**
-   * Announcements API
-   */
-  announcements = {
-    getAll: (filters?: any) => this.getPaginated("/announcements", filters),
-    getById: (id: string) => this.get(`/announcements/${id}`),
-    create: (data: any) => this.post("/announcements", data),
-    update: (id: string, data: any) => this.put(`/announcements/${id}`, data),
-    publish: (id: string) => this.post(`/announcements/${id}/publish`),
-    delete: (id: string) => this.delete(`/announcements/${id}`),
-  };
-
-  /**
    * Users API
    */
   users = {
@@ -697,6 +706,251 @@ class ApiClient {
      * Delete user
      */
     remove: (id: string) => this.delete(`/users/${id}`),
+  };
+
+  /**
+   * Activities API - Comprehensive audit logging and activity tracking
+   */
+  activities = {
+    /**
+     * Get all activities with role-based access control
+     * TENANT: See only their own activities
+     * ORGANIZATION_ADMIN: See activities within their cooperative
+     * SUPER_ADMIN: See all activities across all cooperatives
+     */
+    getAll: (filters?: ActivityFilters) =>
+      this.getPaginated("/activities", filters),
+
+    /**
+     * Get current user's activities
+     */
+    getMyActivities: () => this.getPaginated("/activities/me"),
+
+    /**
+     * Get security activities (Admin only)
+     * Required Roles: SUPER_ADMIN, ORGANIZATION_ADMIN
+     */
+    getSecurityActivities: (filters?: ActivityFilters) =>
+      this.getPaginated("/activities/security", filters),
+
+    /**
+     * Get security events (alias for getSecurityActivities)
+     */
+    getSecurityEvents: (filters?: ActivityFilters) =>
+      this.getPaginated("/activities/security", filters),
+
+    /**
+     * Get activity statistics
+     */
+    getStats: (filters?: ActivityFilters) =>
+      this.get("/activities/stats", filters),
+
+    /**
+     * Create activity log entry
+     */
+    create: (data: {
+      type: string;
+      description: string;
+      entityType: string;
+      entityId: string;
+      metadata?: Record<string, unknown>;
+      isSecurityEvent?: boolean;
+    }) => this.post("/activities", data),
+  };
+
+  /**
+   * Notifications API - In-app notification management
+   */
+  notifications = {
+    /**
+     * Get all notifications for current user
+     */
+    getAll: (filters?: NotificationFilters) =>
+      this.getPaginated("/notifications", filters),
+
+    /**
+     * Get notification by ID
+     */
+    getById: (id: string) => this.get(`/notifications/${id}`),
+
+    /**
+     * Get in-app notifications
+     */
+    getInApp: (limit?: number) =>
+      this.get("/notifications/in-app", limit ? { limit } : {}),
+
+    /**
+     * Mark notification as read
+     */
+    markAsRead: (id: string) => this.patch(`/notifications/${id}/read`),
+
+    /**
+     * Mark in-app notification as read
+     */
+    markInAppAsRead: (id: string) =>
+      this.patch(`/notifications/in-app/${id}/read`),
+
+    /**
+     * Mark all notifications as read
+     */
+    markAllAsRead: () => this.patch("/notifications/mark-all-read"),
+  };
+
+  /**
+   * Reminders API - Automated payment reminders with multi-channel notifications
+   */
+  reminders = {
+    /**
+     * Get all reminders
+     */
+    getAll: (filters?: ReminderFilters) =>
+      this.getPaginated("/reminders", filters),
+
+    /**
+     * Get current user's reminders
+     */
+    getMyReminders: () => this.getPaginated("/reminders/me"),
+
+    /**
+     * Get due reminders
+     */
+    getDueReminders: () => this.getPaginated("/reminders/due"),
+
+    /**
+     * Get reminder by ID
+     */
+    getById: (id: string) => this.get(`/reminders/${id}`),
+
+    /**
+     * Create new reminder
+     */
+    create: (data: CreateReminderData) => this.post("/reminders", data),
+
+    /**
+     * Update reminder
+     */
+    update: (id: string, data: Partial<CreateReminderData>) =>
+      this.put(`/reminders/${id}`, data),
+
+    /**
+     * Delete reminder
+     */
+    remove: (id: string) => this.delete(`/reminders/${id}`),
+
+    /**
+     * Delete reminder (alias for remove)
+     */
+    delete: (id: string) => this.delete(`/reminders/${id}`),
+
+    /**
+     * Update reminder status
+     */
+    updateStatus: (id: string, status: string) =>
+      this.put(`/reminders/${id}`, { status }),
+
+    /**
+     * Send reminder immediately
+     */
+    send: (id: string) => this.post(`/reminders/${id}/send`),
+
+    /**
+     * Get reminder statistics
+     */
+    getStats: () => this.get("/reminders/stats"),
+  };
+
+  /**
+   * Complaints API - Comprehensive complaint management
+   */
+  complaints = {
+    /**
+     * Get all complaints with role-based access
+     * TENANT: See only their own complaints
+     * ORGANIZATION_ADMIN: See all complaints within their cooperative
+     * SUPER_ADMIN: See all complaints across all cooperatives
+     */
+    getAll: (filters?: ComplaintFilters) =>
+      this.getPaginated("/complaints", filters),
+
+    /**
+     * Get my complaints (current user)
+     */
+    getMyComplaints: () => this.getPaginated("/complaints/my"),
+
+    /**
+     * Get organization complaints (Admin only)
+     */
+    getOrganizationComplaints: (filters?: ComplaintFilters) =>
+      this.getPaginated("/complaints/organization", filters),
+
+    /**
+     * Get complaint by ID
+     */
+    getById: (id: string) => this.get(`/complaints/${id}`),
+
+    /**
+     * Create new complaint
+     */
+    create: (data: CreateComplaintData) => this.post("/complaints", data),
+
+    /**
+     * Update complaint status (Admin only)
+     */
+    updateStatus: (id: string, data: UpdateComplaintStatusData) =>
+      this.patch(`/complaints/${id}/status`, data),
+
+    /**
+     * Get complaint statistics (Admin only)
+     */
+    getOrganizationStats: (filters?: { fromDate?: string; toDate?: string }) =>
+      this.get("/complaints/organization/stats", filters),
+
+    /**
+     * Get overall complaint statistics
+     */
+    getStats: () => this.get("/complaints/stats"),
+  };
+
+  /**
+   * Announcements API - Role-based announcement creation and delivery
+   */
+  announcements = {
+    /**
+     * Get all announcements (Admin only)
+     */
+    getAll: (filters?: AnnouncementFilters) =>
+      this.getPaginated("/announcements", filters),
+
+    /**
+     * Get announcement by ID
+     */
+    getById: (id: string) => this.get(`/announcements/${id}`),
+
+    /**
+     * Create new announcement (Admin only)
+     */
+    create: (data: CreateAnnouncementData) => this.post("/announcements", data),
+
+    /**
+     * Update announcement (Admin only)
+     */
+    update: (id: string, data: Partial<CreateAnnouncementData>) =>
+      this.put(`/announcements/${id}`, data),
+
+    /**
+     * Send announcement immediately (Admin only)
+     */
+    send: (id: string) => this.post(`/announcements/${id}/send`),
+
+    /**
+     * Delete announcement (Admin only)
+     */
+    remove: (id: string) => this.delete(`/announcements/${id}`),
+
+    /**
+     * Get announcement statistics (Admin only)
+     */
+    getStats: () => this.get("/announcements/stats"),
   };
 
   /**

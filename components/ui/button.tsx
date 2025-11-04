@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 /**
- * Button component variants following Co-Pay design system
+ * Button component variants following Copay design system
  * Premium fintech styling with navy and blue accents
  */
 const buttonVariants = cva(
