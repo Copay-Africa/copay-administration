@@ -10,7 +10,6 @@ import {
   Users,
   FileText,
   Megaphone,
-  Settings,
   UserCheck,
   Menu,
   X,
@@ -20,7 +19,6 @@ import {
   Activity,
   Bell,
   MessageSquare,
-  Mail,
   BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,7 +62,7 @@ const navigationItems = [
   {
     name: 'Notifications',
     href: '/notifications',
-    icon: Mail,
+    icon: Bell,
     description: 'Message center & delivery tracking'
   },
   {
@@ -102,12 +100,6 @@ const navigationItems = [
     href: '/users',
     icon: UserCheck,
     description: 'User management'
-  },
-  {
-    name: 'Settings',
-    href: '/settings',
-    icon: Settings,
-    description: 'System configuration'
   },
 ];
 

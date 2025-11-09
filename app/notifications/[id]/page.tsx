@@ -303,39 +303,13 @@ export default function NotificationDetailPage({ params }: { params: { id: strin
                     </Card>
 
                     {/* Related Information */}
-                    {(notification.reminder || notification.payment) && (
+                    {notification.payment && (
                         <Card>
                             <CardHeader>
                                 <CardTitle>Related Information</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {notification.reminder && (
-                                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                            <div className="flex items-start space-x-3">
-                                                <Calendar className="w-5 h-5 text-blue-600 mt-0.5" />
-                                                <div className="flex-1">
-                                                    <h4 className="font-medium text-blue-900">Related Reminder</h4>
-                                                    <p className="text-blue-700 mt-1">{notification.reminder.title}</p>
-                                                    {(notification.reminder as any).description && (
-                                                        <p className="text-blue-600 text-sm mt-1">{(notification.reminder as any).description}</p>
-                                                    )}
-                                                    <p className="text-blue-600 text-sm mt-2">
-                                                        Due: {new Date(notification.reminder.dueDate).toLocaleDateString()}
-                                                    </p>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="mt-3 text-blue-700 border-blue-300 hover:bg-blue-100"
-                                                    >
-                                                        <ExternalLink className="w-4 h-4 mr-2" />
-                                                        View Reminder
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
                                     {notification.payment && (
                                         <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                                             <div className="flex items-start space-x-3">
@@ -355,9 +329,11 @@ export default function NotificationDetailPage({ params }: { params: { id: strin
                                                                 {notification.payment.status}
                                                             </Badge>
                                                         </p>
-                                                        <p className="text-green-600 text-sm">
-                                                            Payment Date: {new Date(notification.payment.paymentDate).toLocaleDateString()}
-                                                        </p>
+                                                        {notification.payment.paymentDate && (
+                                                            <p className="text-green-600 text-sm">
+                                                                Payment Date: {new Date(notification.payment.paymentDate).toLocaleDateString()}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                     <Button
                                                         variant="outline"

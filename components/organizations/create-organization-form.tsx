@@ -51,7 +51,6 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
             currency: 'RWF',
             timezone: 'Africa/Kigali',
             paymentDueDay: 15,
-            reminderDays: [7, 3, 1],
         },
     });
 
@@ -63,7 +62,6 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
         email: '',
     });
 
-    const [reminderDaysInput, setReminderDaysInput] = useState('7, 3, 1');
     const [createdOrganizationId, setCreatedOrganizationId] = useState<string | null>(null);
 
     const handleOrganizationChange = (field: keyof CreateOrganizationRequest, value: string | object) => {
@@ -90,16 +88,6 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
             [field]: value,
         }));
         setError('');
-    };
-
-    const handleReminderDaysChange = (value: string) => {
-        setReminderDaysInput(value);
-        try {
-            const days = value.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d) && d > 0);
-            handleSettingsChange('reminderDays', days);
-        } catch {
-            // Invalid input, ignore
-        }
     };
 
     const generateCode = () => {
@@ -574,19 +562,6 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
                         <p className="text-xs text-gray-500">Day of the month when payments are due</p>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="reminderDays">Reminder Days</Label>
-                        <Input
-                            id="reminderDays"
-                            value={reminderDaysInput}
-                            onChange={(e) => handleReminderDaysChange(e.target.value)}
-                            placeholder="7, 3, 1"
-                            disabled={isLoading}
-                        />
-                        <p className="text-xs text-gray-500">
-                            Days before due date to send reminders (comma-separated)
-                        </p>
-                    </div>
                 </div>
 
                 <div className="flex space-x-3 pt-4">

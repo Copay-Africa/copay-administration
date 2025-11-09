@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import axios, { AxiosInstance, AxiosResponse } from "axios";
+import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 import Cookies from "js-cookie";
 import type {
   AuthResponse,
@@ -18,8 +18,6 @@ import type {
   UpdateUserStatusData,
   ActivityFilters,
   NotificationFilters,
-  ReminderFilters,
-  CreateReminderData,
   ComplaintFilters,
   CreateComplaintData,
   UpdateComplaintStatusData,
@@ -27,21 +25,61 @@ import type {
   CreateAnnouncementData,
 } from "@/types";
 
+// Extend axios types for our custom metadata
+declare module 'axios' {
+  interface InternalAxiosRequestConfig {
+    metadata?: {
+      startTime: number;
+      requestId: string;
+    };
+    _retry?: boolean;
+    _retryCount?: number;
+  }
+}
 /**
- * API Client for Copay Super Admin Backend
- * Handles authentication, token management, and API requests
+ * Enhanced API Client for Copay Super Admin Backend
+ * Features:
+ * - Automatic token refresh
+ * - Request retry with exponential backoff
+ * - Comprehensive error handling
+ * - Request/Response interceptors
+ * - Network status monitoring
+ * - Request cancellation support
  */
+
+interface RetryConfig {
+  maxRetries: number;
+  baseDelay: number;
+  maxDelay: number;
+  retryOn: number[];
+}
+
+interface ApiClientConfig {
+  baseURL: string;
+  timeout: number;
+  retry: RetryConfig;
+}
+
 class ApiClient {
   private instance: AxiosInstance;
-  private baseURL: string;
+  private config: ApiClientConfig;
+  private requestCancellationMap = new Map<string, AbortController>();
 
   constructor() {
-    this.baseURL =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
+    this.config = {
+      baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1",
+      timeout: 30000,
+      retry: {
+        maxRetries: 3,
+        baseDelay: 1000,
+        maxDelay: 10000,
+        retryOn: [408, 429, 500, 502, 503, 504], // Timeout, Rate limit, Server errors
+      },
+    };
 
     this.instance = axios.create({
-      baseURL: this.baseURL,
-      timeout: 30000,
+      baseURL: this.config.baseURL,
+      timeout: this.config.timeout,
       headers: {
         "Content-Type": "application/json",
       },
@@ -54,23 +92,39 @@ class ApiClient {
    * Setup request and response interceptors for authentication and error handling
    */
   private setupInterceptors(): void {
-    // Request interceptor - add auth token to requests
+    // Request interceptor - add auth token and handle request tracking
     this.instance.interceptors.request.use(
       (config) => {
+        // Add auth token
         const token = this.getAccessToken();
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Add request metadata for monitoring
+        config.metadata = {
+          startTime: Date.now(),
+          requestId: this.generateRequestId(),
+        };
+
         return config;
       },
       (error) => {
-        return Promise.reject(error);
+        console.error('Request setup failed:', error);
+        return Promise.reject(this.normalizeError(error));
       }
     );
 
-    // Response interceptor - handle token refresh and errors
+    // Response interceptor - handle token refresh, errors, and retry logic
     this.instance.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        // Log successful request in development
+        if (process.env.NODE_ENV === 'development' && response.config.metadata) {
+          const duration = Date.now() - response.config.metadata.startTime;
+          console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url} - ${duration}ms`);
+        }
+        return response;
+      },
       async (error) => {
         const originalRequest = error.config;
 
@@ -89,13 +143,109 @@ class ApiClient {
             }
           } catch (refreshError) {
             this.handleAuthenticationFailure();
-            return Promise.reject(refreshError);
+            return Promise.reject(this.normalizeError(refreshError));
           }
         }
 
-        return Promise.reject(error);
+        // Handle retry logic for retryable errors
+        if (this.shouldRetry(error) && !originalRequest._retryCount) {
+          return this.retryRequest(originalRequest, error);
+        }
+
+        // Log error in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`❌ ${originalRequest.method?.toUpperCase()} ${originalRequest.url}`, error.response?.data || error.message);
+        }
+
+        return Promise.reject(this.normalizeError(error));
       }
     );
+  }
+
+  /**
+   * Generate unique request ID for tracking
+   */
+  private generateRequestId(): string {
+    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Check if request should be retried based on error type and config
+   */
+  private shouldRetry(error: AxiosError): boolean {
+    const { retry } = this.config;
+    
+    // Don't retry if it's a request cancellation
+    if (axios.isCancel(error)) {
+      return false;
+    }
+
+    // Don't retry client errors (4xx except specific ones)
+    if (error.response?.status && error.response.status >= 400 && error.response.status < 500) {
+      return retry.retryOn.includes(error.response.status);
+    }
+
+    // Retry network errors and specified status codes
+    return !error.response || retry.retryOn.includes(error.response.status);
+  }
+
+  /**
+   * Retry request with exponential backoff
+   */
+  private async retryRequest(originalRequest: any, error: AxiosError): Promise<any> {
+    const { retry } = this.config;
+    const retryCount = originalRequest._retryCount || 0;
+
+    if (retryCount >= retry.maxRetries) {
+      return Promise.reject(this.normalizeError(error));
+    }
+
+    // Calculate delay with exponential backoff and jitter
+    const baseDelay = retry.baseDelay;
+    const exponentialDelay = baseDelay * Math.pow(2, retryCount);
+    const jitter = Math.random() * 1000; // Add jitter to prevent thundering herd
+    const delay = Math.min(exponentialDelay + jitter, retry.maxDelay);
+
+    console.log(`🔄 Retrying request (${retryCount + 1}/${retry.maxRetries}) after ${delay}ms`);
+
+    originalRequest._retryCount = retryCount + 1;
+
+    await this.sleep(delay);
+    return this.instance(originalRequest);
+  }
+
+  /**
+   * Sleep utility for retry delays
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Normalize different types of errors into a consistent format
+   */
+  private normalizeError(error: any): Error {
+    if (axios.isCancel(error)) {
+      return new Error('Request was cancelled');
+    }
+
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message || 
+                     error.response?.data?.error || 
+                     error.message || 
+                     'An unexpected error occurred';
+      
+      const normalizedError = new Error(message);
+      (normalizedError as any).status = error.response?.status;
+      (normalizedError as any).code = error.code;
+      return normalizedError;
+    }
+
+    if (error instanceof Error) {
+      return error;
+    }
+
+    return new Error(String(error));
   }
 
   /**
@@ -237,7 +387,7 @@ class ApiClient {
 
     try {
       console.log("Attempting to refresh token...");
-      const response = await axios.post(`${this.baseURL}/auth/refresh`, {
+      const response = await axios.post(`${this.config.baseURL}/auth/refresh`, {
         refreshToken: refreshToken, // Use the same format as login
       });
 
@@ -274,7 +424,7 @@ class ApiClient {
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      console.log("Making login request to:", `${this.baseURL}/auth/login`);
+      console.log("Making login request to:", `${this.config.baseURL}/auth/login`);
       console.log("Request payload:", { ...credentials, pin: "****" });
 
       const response = await this.instance.post("/auth/login", credentials);
@@ -794,69 +944,6 @@ class ApiClient {
      * Mark all notifications as read
      */
     markAllAsRead: () => this.patch("/notifications/mark-all-read"),
-  };
-
-  /**
-   * Reminders API - Automated payment reminders with multi-channel notifications
-   */
-  reminders = {
-    /**
-     * Get all reminders
-     */
-    getAll: (filters?: ReminderFilters) =>
-      this.getPaginated("/reminders", filters),
-
-    /**
-     * Get current user's reminders
-     */
-    getMyReminders: () => this.getPaginated("/reminders/me"),
-
-    /**
-     * Get due reminders
-     */
-    getDueReminders: () => this.getPaginated("/reminders/due"),
-
-    /**
-     * Get reminder by ID
-     */
-    getById: (id: string) => this.get(`/reminders/${id}`),
-
-    /**
-     * Create new reminder
-     */
-    create: (data: CreateReminderData) => this.post("/reminders", data),
-
-    /**
-     * Update reminder
-     */
-    update: (id: string, data: Partial<CreateReminderData>) =>
-      this.put(`/reminders/${id}`, data),
-
-    /**
-     * Delete reminder
-     */
-    remove: (id: string) => this.delete(`/reminders/${id}`),
-
-    /**
-     * Delete reminder (alias for remove)
-     */
-    delete: (id: string) => this.delete(`/reminders/${id}`),
-
-    /**
-     * Update reminder status
-     */
-    updateStatus: (id: string, status: string) =>
-      this.put(`/reminders/${id}`, { status }),
-
-    /**
-     * Send reminder immediately
-     */
-    send: (id: string) => this.post(`/reminders/${id}/send`),
-
-    /**
-     * Get reminder statistics
-     */
-    getStats: () => this.get("/reminders/stats"),
   };
 
   /**

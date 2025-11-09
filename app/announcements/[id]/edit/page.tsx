@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { 
+import {
   Megaphone,
   ArrowLeft,
   Save,
   Send,
-  Calendar,
   Users,
   Bell,
   AlertCircle,
@@ -23,14 +22,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import { withAuth } from '@/context/auth-context';
 import { apiClient } from '@/lib/api-client';
-import type { 
+import type {
   Announcement,
   CreateAnnouncementData,
   Organization,
   User,
-  AnnouncementPriority, 
+  AnnouncementPriority,
   AnnouncementTargetType,
-  NotificationType 
+  NotificationType
 } from '@/types';
 
 /**
@@ -48,7 +47,7 @@ function EditAnnouncementPage() {
   const params = useParams();
   const router = useRouter();
   const announcementId = params.id as string;
-  
+
   const [formData, setFormData] = useState<AnnouncementFormData>({
     title: '',
     message: '',
@@ -69,11 +68,7 @@ function EditAnnouncementPage() {
   const [success, setSuccess] = useState('');
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
 
-  useEffect(() => {
-    fetchAnnouncementAndFormData();
-  }, [announcementId]);
-
-  const fetchAnnouncementAndFormData = async () => {
+  const fetchAnnouncementAndFormData = useCallback(async () => {
     setLoading(true);
     try {
       const [announcementResponse, cooperativesResponse, usersResponse] = await Promise.all([
@@ -100,9 +95,9 @@ function EditAnnouncementPage() {
         targetUserIds: announcementData.targetUserIds || [],
         notificationTypes: announcementData.notificationTypes,
         priority: announcementData.priority,
-        scheduledFor: announcementData.scheduledFor ? 
+        scheduledFor: announcementData.scheduledFor ?
           new Date(announcementData.scheduledFor).toISOString().slice(0, 16) : '',
-        expiresAt: announcementData.expiresAt ? 
+        expiresAt: announcementData.expiresAt ?
           new Date(announcementData.expiresAt).toISOString().slice(0, 16) : '',
       });
 
@@ -114,7 +109,11 @@ function EditAnnouncementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [announcementId]);
+
+  useEffect(() => {
+    fetchAnnouncementAndFormData();
+  }, [fetchAnnouncementAndFormData]);
 
   const handleInputChange = (field: keyof AnnouncementFormData, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -124,7 +123,7 @@ function EditAnnouncementPage() {
   const handleNotificationTypeChange = (type: NotificationType, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
-      notificationTypes: checked 
+      notificationTypes: checked
         ? [...prev.notificationTypes, type]
         : prev.notificationTypes.filter(t => t !== type)
     }));
@@ -133,7 +132,7 @@ function EditAnnouncementPage() {
   const handleCooperativeSelection = (cooperativeId: string, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
-      targetCooperativeIds: checked 
+      targetCooperativeIds: checked
         ? [...prev.targetCooperativeIds, cooperativeId]
         : prev.targetCooperativeIds.filter(id => id !== cooperativeId)
     }));
@@ -142,7 +141,7 @@ function EditAnnouncementPage() {
   const handleUserSelection = (userId: string, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
-      targetUserIds: checked 
+      targetUserIds: checked
         ? [...prev.targetUserIds, userId]
         : prev.targetUserIds.filter(id => id !== userId)
     }));
@@ -182,7 +181,7 @@ function EditAnnouncementPage() {
 
   const handleSubmit = async (e: React.FormEvent, sendImmediately = false) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setSubmitting(true);
@@ -202,7 +201,7 @@ function EditAnnouncementPage() {
       };
 
       await apiClient.announcements.update(announcementId, announcementData);
-      
+
       // If sending immediately, call the send endpoint
       if (sendImmediately) {
         await apiClient.announcements.send(announcementId);
@@ -210,7 +209,7 @@ function EditAnnouncementPage() {
       } else {
         setSuccess('Announcement updated successfully!');
       }
-      
+
       // Redirect after success
       setTimeout(() => {
         router.push(`/announcements/${announcementId}`);
@@ -344,11 +343,11 @@ function EditAnnouncementPage() {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="priority">Priority *</Label>
-                  <Select 
-                    value={formData.priority} 
+                  <Select
+                    value={formData.priority}
                     onValueChange={(value) => handleInputChange('priority', value as AnnouncementPriority)}
                   >
                     <SelectTrigger>
@@ -392,8 +391,8 @@ function EditAnnouncementPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="targetType">Target Audience *</Label>
-                <Select 
-                  value={formData.targetType} 
+                <Select
+                  value={formData.targetType}
                   onValueChange={(value) => handleInputChange('targetType', value as AnnouncementTargetType)}
                 >
                   <SelectTrigger>
@@ -535,8 +534,8 @@ function EditAnnouncementPage() {
             <Button type="button" variant="outline" asChild>
               <Link href={`/announcements/${announcementId}`}>Cancel</Link>
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               variant="outline"
               disabled={submitting}
             >
@@ -552,9 +551,9 @@ function EditAnnouncementPage() {
                 </>
               )}
             </Button>
-            <Button 
+            <Button
               type="button"
-              onClick={(e) => handleSubmit(e as any, true)}
+              onClick={(e) => handleSubmit(e, true)}
               disabled={submitting}
               className="min-w-32"
             >

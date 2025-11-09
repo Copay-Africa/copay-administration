@@ -20,19 +20,17 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import { withAuth } from '@/context/auth-context';
 import { apiClient } from '@/lib/api-client';
-import { formatCurrency } from '@/lib/utils';
 import type { 
   Announcement, 
   AnnouncementStatus, 
   AnnouncementPriority,
-  AnnouncementTargetType,
-  NotificationType 
+  AnnouncementTargetType
 } from '@/types';
 
 /**
@@ -73,7 +71,7 @@ function AnnouncementDetailPage() {
                 console.error('Failed to fetch announcement:', err);
                 
                 // More detailed error handling
-                const error = err as any;
+                const error = err as { response?: { status?: number; data?: unknown } };
                 console.log('Full error object:', error);
                 console.log('Error response:', error.response);
                 console.log('Error status:', error.response?.status);
@@ -86,7 +84,7 @@ function AnnouncementDetailPage() {
                 } else if (error.response?.status === 403) {
                     setError('You don\'t have permission to view this announcement.');
                 } else {
-                    setError(`Failed to load announcement: ${error.message || 'Unknown error'}`);
+                    setError('Failed to load announcement: Unknown error');
                 }
             } finally {
                 setLoading(false);

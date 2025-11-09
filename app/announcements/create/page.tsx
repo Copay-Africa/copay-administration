@@ -6,7 +6,6 @@ import {
     ArrowLeft,
     Save,
     Send,
-    Calendar,
     Users,
     Bell,
     AlertCircle,
@@ -36,7 +35,6 @@ import type {
  * Create Announcement Page
  * Form for creating system-wide announcements
  */
-
 interface AnnouncementFormData extends CreateAnnouncementData {
     targetCooperativeIds: string[];
     targetUserIds: string[];
@@ -491,7 +489,7 @@ function CreateAnnouncementPage() {
                         </Button>
                         <Button
                             type="button"
-                            onClick={(e) => handleSubmit(e as any, true)}
+                            onClick={(e) => handleSubmit(e, true)}
                             disabled={submitting || loading}
                             className="min-w-32"
                         >

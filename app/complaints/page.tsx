@@ -109,21 +109,109 @@ export default function ComplaintsPage() {
 
     // Fetch complaints and statistics using documented endpoints only
     const fetchComplaints = useCallback(async () => {
+        setLoading(true);
+        setError('');
+        
         try {
-            // Use documented endpoints:
-            // ✅ complaints/organization - for organization complaints list
-            // ✅ complaints/organization/stats - for organization complaint statistics
+            console.log('Fetching complaints with filters:', filters);
+            console.log('API Base URL:', process.env.NEXT_PUBLIC_API_URL);
+            
+            // Use documented endpoints according to API documentation:
+            // ✅ GET /complaints/organization - for organization complaints list
+            // ✅ GET /complaints/organization/stats - for organization complaint statistics
             const [complaintsResponse, statsResponse] = await Promise.all([
                 apiClient.complaints.getOrganizationComplaints(filters),
                 apiClient.complaints.getOrganizationStats()
             ]);
 
-            setComplaints((complaintsResponse.data || complaintsResponse) as Complaint[]);
-            setStats(statsResponse as ComplaintStats);
-            setError('');
+            console.log('Complaints response:', complaintsResponse);
+            console.log('Stats response:', statsResponse);
+
+            // Handle paginated response format for complaints
+            if (complaintsResponse && typeof complaintsResponse === 'object' && 'data' in complaintsResponse) {
+                setComplaints(complaintsResponse.data as Complaint[]);
+            } else if (Array.isArray(complaintsResponse)) {
+                setComplaints(complaintsResponse as Complaint[]);
+            } else {
+                console.error('Unexpected complaints response format:', complaintsResponse);
+                setComplaints([]);
+            }
+
+            // Handle stats response
+            if (statsResponse && typeof statsResponse === 'object') {
+                setStats(statsResponse as ComplaintStats);
+            } else {
+                console.error('Unexpected stats response format:', statsResponse);
+                setStats(null);
+            }
         } catch (err) {
             console.error('Failed to fetch complaints:', err);
-            setError('Failed to load complaints data');
+            
+            // Better error typing for network/API errors
+            const error = err as Error & {
+                name?: string;
+                code?: string;
+                response?: {
+                    data?: unknown;
+                    status?: number;
+                    statusText?: string;
+                };
+            };
+            
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+                response: error.response?.data,
+                status: error.response?.status,
+                statusText: error.response?.statusText
+            });
+            
+            // Provide more specific error messages based on the error type
+            let errorMessage = 'Failed to load complaints data';
+            const isNetworkError = error.code === 'ERR_NETWORK' || 
+                                  error.message?.includes('fetch') || 
+                                  error.message?.includes('Failed to fetch') ||
+                                  error.name === 'TypeError';
+            
+            if (error.response?.status === 401) {
+                errorMessage = 'Authentication failed. Please log in again.';
+            } else if (error.response?.status === 403) {
+                errorMessage = 'Access denied. You may not have permission to view complaints.';
+            } else if (error.response?.status === 404) {
+                errorMessage = 'Complaints API endpoint not found. The server may not be configured correctly.';
+            } else if (isNetworkError) {
+                errorMessage = `Cannot connect to the API server (${process.env.NEXT_PUBLIC_API_URL}). Please check if the server is running or use mock data for development.`;
+                
+                // In development, provide mock data as fallback
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn('Using mock data due to API connection failure');
+                    setComplaints([]);
+                    setStats({
+                        total: 0,
+                        byStatus: [
+                            { status: 'OPEN', count: 0 },
+                            { status: 'IN_PROGRESS', count: 0 },
+                            { status: 'RESOLVED', count: 0 },
+                            { status: 'CLOSED', count: 0 }
+                        ],
+                        byPriority: [
+                            { priority: 'LOW', count: 0 },
+                            { priority: 'MEDIUM', count: 0 },
+                            { priority: 'HIGH', count: 0 },
+                            { priority: 'URGENT', count: 0 }
+                        ],
+                        recentComplaints: []
+                    });
+                    setError(''); // Clear error when using mock data
+                    return;
+                }
+            } else {
+                errorMessage = error.message || 'Failed to load complaints data';
+            }
+            
+            setError(errorMessage);
+            
             // Set empty data on error to prevent UI breaking
             setComplaints([]);
             setStats(null);
@@ -171,12 +259,44 @@ export default function ComplaintsPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-copay-navy mx-auto"></div>
-                    <p className="mt-2 text-sm text-gray-600">Loading complaints...</p>
+            <DashboardLayout>
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-copay-navy mx-auto"></div>
+                        <p className="mt-2 text-sm text-gray-600">Loading complaints...</p>
+                    </div>
                 </div>
-            </div>
+            </DashboardLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <DashboardLayout>
+                <div className="max-w-7xl mx-auto">
+                    <Card>
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                            <AlertTriangle className="h-16 w-16 text-red-500 mb-6" />
+                            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Something went wrong</h2>
+                            <p className="text-gray-600 mb-6 text-center max-w-md">
+                                We encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.
+                            </p>
+                            <div className="bg-gray-50 p-4 rounded-lg mb-6 w-full max-w-md">
+                                <h3 className="text-sm font-medium text-gray-700 mb-2">Error Details (Development Only)</h3>
+                                <code className="text-xs text-red-600 break-all">{error}</code>
+                            </div>
+                            <div className="flex space-x-3">
+                                <Button onClick={() => window.location.reload()}>
+                                    Try Again
+                                </Button>
+                                <Button variant="outline" onClick={() => window.location.href = '/dashboard'}>
+                                    Go to Dashboard
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </DashboardLayout>
         );
     }
 

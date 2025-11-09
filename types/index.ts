@@ -60,7 +60,6 @@ export interface OrganizationSettings {
   currency: string;
   timezone: string;
   paymentDueDay: number;
-  reminderDays: number[];
 }
 
 export interface CreateOrganizationRequest {
@@ -416,6 +415,9 @@ export interface PaginatedResponse<T> {
     total: number;
     totalPages: number;
   };
+  meta?: {
+    total: number;
+  };
   message?: string;
 }
 
@@ -591,13 +593,12 @@ export type ActivityType =
   | 'TENANT_CREATED' | 'TENANT_UPDATED' | 'TENANT_DELETED'
   | 'ACCOUNT_REQUEST_CREATED' | 'ACCOUNT_REQUEST_PROCESSED'
   | 'COMPLAINT_CREATED' | 'COMPLAINT_UPDATED' | 'COMPLAINT_RESOLVED'
-  | 'REMINDER_CREATED' | 'REMINDER_SENT' | 'REMINDER_FAILED'
   | 'ANNOUNCEMENT_CREATED' | 'ANNOUNCEMENT_SENT'
   | 'SUSPICIOUS_LOGIN' | 'MULTIPLE_FAILED_LOGINS' | 'UNAUTHORIZED_ACCESS'
   | 'ACCOUNT_LOCKED' | 'PASSWORD_RESET_REQUESTED' | 'PASSWORD_CHANGED'
   | 'SYSTEM_BACKUP' | 'SYSTEM_MAINTENANCE' | 'DATA_EXPORT';
 
-export type EntityType = 'USER' | 'PAYMENT' | 'COOPERATIVE' | 'REMINDER' | 'SYSTEM' | 'COMPLAINT' | 'ANNOUNCEMENT';
+export type EntityType = 'USER' | 'PAYMENT' | 'COOPERATIVE' | 'SYSTEM' | 'COMPLAINT' | 'ANNOUNCEMENT';
 
 export interface Activity {
   id: string;
@@ -663,103 +664,18 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
   readAt?: string;
-  reminder?: {
-    id: string;
-    title: string;
-    type: string;
-  };
+  userId?: string;
   payment?: {
     id: string;
     amount: number;
     status: string;
+    paymentDate?: string;
   };
 }
 
 export interface NotificationFilters extends BaseFilters {
   read?: boolean;
   type?: string;
-}
-
-/**
- * Reminder Management types
- */
-export type ReminderType = 'PAYMENT_DUE' | 'PAYMENT_OVERDUE' | 'CUSTOM';
-export type ReminderStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
-export type NotificationType = 'SMS' | 'EMAIL' | 'IN_APP' | 'PUSH_NOTIFICATION';
-export type RecurringPattern = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
-
-export interface Reminder {
-  id: string;
-  title: string;
-  description?: string;
-  type: ReminderType;
-  status: ReminderStatus;
-  userId: string;
-  paymentTypeId?: string;
-  reminderDate: string;
-  isRecurring: boolean;
-  recurringPattern?: RecurringPattern;
-  notificationTypes: NotificationType[];
-  advanceNoticeDays?: number;
-  customAmount?: number;
-  notes?: string;
-  user?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
-  };
-  paymentType?: {
-    id: string;
-    name: string;
-    description: string;
-    amount: number;
-  };
-  cooperative?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateReminderData {
-  title: string;
-  description?: string;
-  type: ReminderType;
-  paymentTypeId?: string;
-  reminderDate: string;
-  isRecurring?: boolean;
-  recurringPattern?: RecurringPattern;
-  notificationTypes: NotificationType[];
-  advanceNoticeDays?: number;
-  customAmount?: number;
-  notes?: string;
-}
-
-export interface ReminderFilters extends BaseFilters {
-  type?: ReminderType;
-  status?: ReminderStatus;
-  paymentTypeId?: string;
-  fromDate?: string;
-  toDate?: string;
-  isRecurring?: boolean;
-  isDue?: boolean;
-}
-
-export interface ReminderStats {
-  total: number;
-  active: number;
-  paused: number;
-  completed: number;
-  byType: {
-    type: ReminderType;
-    count: number;
-  }[];
-  dueToday: number;
-  overdue: number;
-  recurring: number;
 }
 
 /**
@@ -839,6 +755,7 @@ export interface ComplaintStats {
 /**
  * Announcement Management types
  */
+export type NotificationType = 'SMS' | 'EMAIL' | 'IN_APP' | 'PUSH_NOTIFICATION';
 export type AnnouncementStatus = 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'SENT' | 'CANCELLED';
 export type AnnouncementPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 export type AnnouncementTargetType = 'ALL_TENANTS' | 'ALL_ORGANIZATION_ADMINS' | 'SPECIFIC_COOPERATIVE' | 'SPECIFIC_USERS';
@@ -863,6 +780,10 @@ export interface AnnouncementFilters extends BaseFilters {
 
 export interface AnnouncementStats {
   totalAnnouncements: number;
+  sentToday: number;
+  byStatus: {
+    [key in AnnouncementStatus]: number;
+  };
   statusBreakdown: {
     [key in AnnouncementStatus]: number;
   };

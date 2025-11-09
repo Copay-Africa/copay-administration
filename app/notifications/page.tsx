@@ -388,9 +388,6 @@ export default function NotificationsPage() {
                                                     {notification.title}
                                                 </p>
                                                 <p className="text-sm text-gray-500 truncate max-w-md">{notification.message}</p>
-                                                {notification.reminder && (
-                                                    <p className="text-xs text-blue-600 mt-1">Related to: {notification.reminder.title}</p>
-                                                )}
                                                 {notification.payment && (
                                                     <p className="text-xs text-green-600 mt-1">
                                                         Payment: RWF {notification.payment.amount.toLocaleString()} ({notification.payment.status})

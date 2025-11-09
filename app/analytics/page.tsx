@@ -88,23 +88,14 @@ export default function AnalyticsPage() {
     // Fetch dashboard statistics using only documented API endpoints
     const fetchDashboardStats = useCallback(async () => {
         try {
-            // Only use documented API endpoints:
-            // ✅ users/stats - documented
-            // ✅ complaints/organization/stats - documented  
-            // ✅ payments/organization/stats - documented
-            // ❌ reminders stats - no documented endpoint, calculate from list
-            // ❌ activities/stats - not documented, will use mock data
             const [
                 userStatsResult,
                 complaintsStatsResult,
-                paymentsStatsResult,
-                remindersListResult
+                paymentsStatsResult
             ] = await Promise.allSettled([
                 apiClient.users.getStats(),
                 apiClient.complaints.getOrganizationStats(),
-                apiClient.payments.getOrganizationStats(),
-                // Calculate reminder stats from list since no stats endpoint exists
-                apiClient.reminders.getAll({ limit: 1000 })
+                apiClient.payments.getOrganizationStats()
             ]);
 
             // Process user stats (documented)
@@ -122,18 +113,12 @@ export default function AnalyticsPage() {
                 ? (paymentsStatsResult.value as any)
                 : { summary: { totalPayments: 0, totalAmount: 0 }, statusBreakdown: [] };
 
-            // Calculate reminder stats since no endpoint exists
-            let totalReminders = 0;
-            if (remindersListResult.status === 'fulfilled' && remindersListResult.value?.data) {
-                totalReminders = remindersListResult.value.data.length;
-            }
-
             // Build dashboard stats from documented API responses
             const dashboardData: DashboardStats = {
                 totalUsers: userStats.totalUsers || 0,
                 totalPayments: paymentsStats.summary?.totalPayments || 0,
                 totalComplaints: complaintsStats.summary?.totalComplaints || 0,
-                totalActivities: totalReminders, // Use reminders count as activities since no activities stats endpoint
+                totalActivities: 0, // No activities endpoint available
                 paymentStats: {
                     totalAmount: paymentsStats.summary?.totalAmount || 0,
                     completedPayments: paymentsStats.statusBreakdown?.find((s: any) => s.status === 'COMPLETED')?.count || 0,
@@ -149,7 +134,8 @@ export default function AnalyticsPage() {
             };
 
             setDashboardStats(dashboardData);
-        } catch (err) {
+        } catch (error) {
+            console.error('Failed to load dashboard stats:', error);
             setDashboardStats({
                 totalUsers: 0,
                 totalPayments: 0,

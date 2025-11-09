@@ -183,7 +183,7 @@ function DashboardPage() {
     title: string;
     description: string;
     timestamp: string;
-    icon: any;
+    icon: React.ComponentType<{ className?: string }>;
     color: string;
   }>>([]);
   const [loading, setLoading] = useState(true);
@@ -243,14 +243,14 @@ function DashboardPage() {
 
         if (activitiesData?.data) {
           // Transform activities for dashboard display
-          const transformedActivities = (activitiesData.data as any[]).map((activity: {
+          const transformedActivities = (activitiesData.data as Array<{
             id: string;
             type: string;
             description: string;
             createdAt: string;
             isSecurityEvent: boolean;
             user?: { firstName?: string; lastName?: string; phone?: string };
-          }) => ({
+          }>).map((activity) => ({
             id: activity.id,
             type: activity.type.toLowerCase(),
             title: getActivityTitle(activity),

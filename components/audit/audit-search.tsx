@@ -7,7 +7,7 @@ import {
     Calendar,
     User,
     MapPin,
-    Activity,
+    Activity as ActivityIcon,
     AlertTriangle,
     Download,
     RefreshCw,
@@ -59,9 +59,9 @@ const activityTypeGroups = {
 // Get activity icon
 const getActivityIcon = (activityType: string) => {
     if (activityType.includes('LOGIN')) return <User className="w-4 h-4" />;
-    if (activityType.includes('PAYMENT')) return <Activity className="w-4 h-4" />;
+    if (activityType.includes('PAYMENT')) return <ActivityIcon className="w-4 h-4" />;
     if (activityType.includes('SECURITY') || activityType.includes('SUSPICIOUS')) return <AlertTriangle className="w-4 h-4" />;
-    return <Activity className="w-4 h-4" />;
+    return <ActivityIcon className="w-4 h-4" />;
 };
 
 // Get activity color
@@ -117,9 +117,9 @@ export function AuditSearch({ className }: AuditSearchProps) {
 
             // Use appropriate endpoint based on filters
             if (filters.isSecurityEvent === true) {
-                response = await apiClient.activities.getSecurityActivities(filters);
+                response = await apiClient.activities.getSecurityActivities(filters) as PaginatedResponse<ActivityType>;
             } else {
-                response = await apiClient.activities.getAll(filters);
+                response = await apiClient.activities.getAll(filters) as PaginatedResponse<ActivityType>;
             }
 
             setActivities(response.data || []);

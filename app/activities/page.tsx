@@ -53,23 +53,82 @@ function ActivitiesPage() {
         setLoading(true);
         setError('');
         try {
-            // Fetch activities and stats in parallel
+            // Fetch activities and stats in parallel using documented API endpoints
             const [activitiesResponse, statsResponse] = await Promise.all([
                 apiClient.activities.getAll(filters),
                 apiClient.activities.getStats()
             ]);
 
-            // Handle response format - could be array directly or wrapped in data property
-            const activityData = Array.isArray(activitiesResponse)
-                ? activitiesResponse
-                : (activitiesResponse.data || activitiesResponse);
+            // Handle paginated response format for activities
+            if (activitiesResponse && typeof activitiesResponse === 'object' && 'data' in activitiesResponse) {
+                setActivities(activitiesResponse.data as ActivityType[]);
+            } else if (Array.isArray(activitiesResponse)) {
+                setActivities(activitiesResponse as ActivityType[]);
+            } else {
+                console.error('Unexpected activities response format:', activitiesResponse);
+                setActivities([]);
+            }
 
-            setActivities(activityData as ActivityType[]);
-            setStats(statsResponse as ActivityStats);
+            // Handle stats response - this should come from the get() method which returns response.data.data
+            if (statsResponse && typeof statsResponse === 'object') {
+                setStats(statsResponse as ActivityStats);
+            } else {
+                console.error('Unexpected stats response format:', statsResponse);
+                setStats(null);
+            }
         } catch (err) {
             console.error('Failed to fetch activities:', err);
-            const errorMessage = (err as Error)?.message || 'Failed to load activities. Please try again.';
+            
+            // Better error typing for network/API errors
+            const error = err as Error & {
+                name?: string;
+                code?: string;
+                response?: {
+                    data?: unknown;
+                    status?: number;
+                    statusText?: string;
+                };
+            };
+            
+            // Provide more specific error messages based on the error type
+            let errorMessage = 'Failed to load activities';
+            const isNetworkError = error.code === 'ERR_NETWORK' || 
+                                  error.message?.includes('fetch') || 
+                                  error.message?.includes('Failed to fetch') ||
+                                  error.name === 'TypeError';
+            
+            if (error.response?.status === 401) {
+                errorMessage = 'Authentication failed. Please log in again.';
+            } else if (error.response?.status === 403) {
+                errorMessage = 'Access denied. You may not have permission to view activities.';
+            } else if (error.response?.status === 404) {
+                errorMessage = 'Activities API endpoint not found. The server may not be configured correctly.';
+            } else if (isNetworkError) {
+                errorMessage = `Cannot connect to the API server (${process.env.NEXT_PUBLIC_API_URL}). Please check if the server is running.`;
+                
+                // In development, provide mock data as fallback
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn('Using mock data due to API connection failure');
+                    setActivities([]);
+                    setStats({
+                        total: 0,
+                        byType: [],
+                        byEntityType: [],
+                        securityEvents: 0,
+                        last24Hours: 0,
+                        last7Days: 0
+                    });
+                    setError(''); // Clear error when using mock data
+                    return;
+                }
+            } else {
+                errorMessage = error.message || 'Failed to load activities';
+            }
+            
             setError(errorMessage);
+            // Set empty data on error
+            setActivities([]);
+            setStats(null);
         } finally {
             setLoading(false);
         }
@@ -232,11 +291,24 @@ function ActivitiesPage() {
                 {/* Activity Statistics */}
                 {error ? (
                     <Card>
-                        <CardContent className="flex flex-col items-center justify-center py-8">
-                            <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
-                            <h3 className="text-lg font-medium text-copay-navy mb-2">Failed to load activities</h3>
-                            <p className="text-copay-gray mb-4">{error}</p>
-                            <Button onClick={() => window.location.reload()}>Try Again</Button>
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                            <AlertTriangle className="h-16 w-16 text-red-500 mb-6" />
+                            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Failed to load activities</h2>
+                            <p className="text-gray-600 mb-6 text-center max-w-md">
+                                We encountered an error while loading the activities data. Please try refreshing the page or contact support if the problem persists.
+                            </p>
+                            <div className="bg-gray-50 p-4 rounded-lg mb-6 w-full max-w-md">
+                                <h3 className="text-sm font-medium text-gray-700 mb-2">Error Details (Development Only)</h3>
+                                <code className="text-xs text-red-600 break-all">{error}</code>
+                            </div>
+                            <div className="flex space-x-3">
+                                <Button onClick={() => fetchActivitiesAndStats()}>
+                                    Try Again
+                                </Button>
+                                <Button variant="outline" onClick={() => window.location.href = '/dashboard'}>
+                                    Go to Dashboard
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 ) : (

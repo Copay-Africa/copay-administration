@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Search,
   Filter,
   Download,
   FileText,
@@ -17,7 +16,6 @@ import {
   Phone,
   Home,
   Calendar,
-  TrendingUp,
   Users
 } from 'lucide-react';
 import Link from 'next/link';
@@ -119,23 +117,7 @@ function AccountRequestsPage() {
     }
   };
 
-  const handleDeleteRequest = async (requestId: string) => {
-    if (!confirm('Are you sure you want to delete this account request? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      await apiClient.accountRequests.remove(requestId);
-      // Refresh the requests list
-      setRequests(prev => prev.filter(request => request.id !== requestId));
-      alert('Account request deleted successfully');
-    } catch (err) {
-      console.error('Failed to delete request:', err);
-      alert('Failed to delete request. Please try again.');
-    }
-  };
-
-  const handleExportRequests = async () => {
+  const handleExportRequests = () => {
     try {
       // Create CSV content
       const csvHeaders = ['Full Name', 'Phone', 'Room Number', 'Status', 'Cooperative', 'Submitted Date', 'Processed Date', 'Notes'];

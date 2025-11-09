@@ -27,12 +27,6 @@ import { formatCurrency, formatNumber } from '@/lib/utils';
 import { apiClient } from '@/lib/api-client';
 import type { Organization } from '@/types';
 
-interface ApiResponseWrapper {
-    id?: string;
-    name?: string;
-    data?: Organization;
-}
-
 interface ApiError {
     message?: string;
     response?: {
@@ -367,13 +361,6 @@ function OrganizationDetailsPage() {
                             <div>
                                 <label className="text-sm font-medium text-copay-gray">Payment Due Day</label>
                                 <p className="text-copay-navy">Day {organization.settings.paymentDueDay} of each month</p>
-                            </div>
-
-                            <div>
-                                <label className="text-sm font-medium text-copay-gray">Reminder Days</label>
-                                <p className="text-copay-navy">
-                                    {organization.settings.reminderDays.join(', ')} days before due date
-                                </p>
                             </div>
 
                             {organization.onboardingStatus && (

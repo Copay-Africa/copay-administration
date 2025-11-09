@@ -16,7 +16,6 @@ import {
     AlertTriangle,
     Users,
     Calendar,
-    Bell,
     Flag
 } from 'lucide-react';
 import Link from 'next/link';
