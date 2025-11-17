@@ -47,6 +47,13 @@ export interface Organization {
   phone: string;
   email: string;
   status: OrganizationStatus;
+  categoryId?: string;
+  category?: {
+    id: string;
+    name: string;
+    icon?: string;
+    color?: string;
+  };
   memberCount?: number;
   totalRevenue?: number;
   monthlyActiveUsers?: number;
@@ -69,6 +76,7 @@ export interface CreateOrganizationRequest {
   address: string;
   phone: string;
   email: string;
+  categoryId: string; // Made required since validation enforces it
   settings: OrganizationSettings;
 }
 
@@ -110,10 +118,15 @@ export interface SubscriptionPlan {
 export interface Payment {
   id: string;
   amount: number;
+  baseAmount: number; // Amount that goes to cooperative
+  fee: number; // CoPay's transaction fee
+  totalPaid: number; // Total amount paid by user
   status: PaymentStatus;
   description: string;
+  dueDate?: string;
   paymentMethod: PaymentMethod;
   paymentReference: string;
+  invoiceNumber: string;
   paymentType: PaymentType;
   sender: PaymentSender;
   cooperative: PaymentCooperative;
@@ -198,6 +211,51 @@ export type PaymentMethod =
   | "BANK_BK" 
   | "BANK_TRANSFER" 
   | "CREDIT_CARD";
+
+/**
+ * Payment Distribution Types
+ */
+export interface PaymentDistributionSummary {
+  cooperativeId: string;
+  cooperativeName: string;
+  cooperativeCode: string;
+  totalBaseAmount: number; // Total amount to be sent to cooperative
+  totalFees: number; // Total fees collected by CoPay
+  totalPayments: number; // Number of completed payments
+  completedPaymentsCount: number;
+  pendingPaymentsCount: number;
+  month: string; // YYYY-MM format
+  year: number;
+  status: "PENDING" | "PROCESSED" | "DISTRIBUTED"; // Distribution status
+  lastDistributedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MonthlyDistributionReport {
+  month: string; // YYYY-MM format
+  year: number;
+  totalCollected: number; // Total amount collected from users
+  totalFees: number; // Total CoPay fees
+  totalDistributable: number; // Total amount to be distributed to cooperatives
+  cooperativeDistributions: PaymentDistributionSummary[];
+  summary: {
+    totalCooperatives: number;
+    averagePerCooperative: number;
+    largestDistribution: number;
+    smallestDistribution: number;
+  };
+  createdAt: string;
+}
+
+export interface PaymentDistributionFilters extends BaseFilters {
+  cooperativeId?: string;
+  month?: string; // YYYY-MM format
+  year?: number;
+  status?: PaymentDistributionSummary['status'];
+  minAmount?: number;
+  maxAmount?: number;
+}
 
 /**
  * Tenant related types
@@ -795,4 +853,150 @@ export interface AnnouncementStats {
     announcementsSent: number;
     recipientsReached: number;
   };
+}
+
+/**
+ * Cooperative Category types
+ */
+export interface CooperativeCategory {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  sortOrder: number;
+  cooperativeCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CooperativeCategoryFilters extends BaseFilters {
+  isActive?: boolean;
+}
+
+export interface CooperativeCategoryStats {
+  totalCategories: number;
+  activeCategories: number;
+  inactiveCategories: number;
+  totalCooperatives: number;
+  categoriesWithCooperatives: number;
+  topCategories: Array<{
+    id: string;
+    name: string;
+    cooperativeCount: number;
+  }>;
+}
+
+/**
+ * Balance Redistribution Management types
+ */
+export interface BalanceRedistributionResult {
+  id: string;
+  amount: number;
+  baseAmount: number;
+  totalPaid: number;
+  platformFee: number;
+  status: 'COMPLETED';
+  redistributedAt: string;
+  paymentType: {
+    id: string;
+    name: string;
+  };
+  sender: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  cooperative: {
+    id: string;
+    name: string;
+  };
+  updatedBalance: {
+    cooperativeBalance: number;
+    totalBalance: number;
+    platformFees: number;
+  };
+}
+
+export interface BatchRedistributionRequest {
+  paymentIds: string[];
+}
+
+export interface BatchRedistributionResult {
+  batchId: string;
+  processedCount: number;
+  successCount: number;
+  failureCount: number;
+  totalAmount: number;
+  totalBaseAmount: number;
+  totalPlatformFees: number;
+  processedAt: string;
+  results: Array<{
+    paymentId: string;
+    status: 'SUCCESS' | 'FAILED';
+    amount?: number;
+    baseAmount?: number;
+    platformFee?: number;
+    redistributedAt?: string;
+    error?: string;
+    failedAt?: string;
+  }>;
+  updatedBalance: {
+    cooperativeBalance: number;
+    totalBalance: number;
+    platformFees: number;
+  };
+}
+
+export interface PendingRedistribution {
+  id: string;
+  amount: number;
+  baseAmount: null | number;
+  totalPaid: null | number;
+  status: 'COMPLETED';
+  needsRedistribution: boolean;
+  reason: string;
+  paymentType: {
+    id: string;
+    name: string;
+  };
+  sender: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  cooperative: {
+    id: string;
+    name: string;
+  };
+  createdAt: string;
+  paidAt: string;
+}
+
+export interface PendingRedistributionsResponse {
+  data: PendingRedistribution[];
+  meta: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+    cooperativeId?: string;
+    dateRange: {
+      fromDate: string;
+      toDate: string;
+    };
+  };
+  summary: {
+    totalPendingAmount: number;
+    estimatedPlatformFees: number;
+    estimatedBaseAmount: number;
+    affectedPayments: number;
+  };
+}
+
+export interface PendingRedistributionFilters {
+  cooperativeId?: string;
+  limit?: number;
+  offset?: number;
+  fromDate?: string;
+  toDate?: string;
 }

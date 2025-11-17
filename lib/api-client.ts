@@ -23,6 +23,12 @@ import type {
   UpdateComplaintStatusData,
   AnnouncementFilters,
   CreateAnnouncementData,
+  CooperativeCategory,
+  CooperativeCategoryFilters,
+  CooperativeCategoryStats,
+  PaymentDistributionFilters,
+  PaymentDistributionSummary,
+  MonthlyDistributionReport,
 } from "@/types";
 
 // Extend axios types for our custom metadata
@@ -669,6 +675,19 @@ class ApiClient {
   };
 
   /**
+   * Cooperative Categories API
+   */
+  cooperativeCategories = {
+    getAll: (filters?: CooperativeCategoryFilters) => this.getPaginated<CooperativeCategory>("/cooperative-categories", filters),
+    getById: (id: string) => this.get<CooperativeCategory>(`/cooperative-categories/${id}`),
+    create: (data: Partial<CooperativeCategory>) => this.post<CooperativeCategory>("/cooperative-categories", data),
+    update: (id: string, data: Partial<CooperativeCategory>) => this.patch<CooperativeCategory>(`/cooperative-categories/${id}`, data),
+    reorder: (data: Array<{ id: string; sortOrder: number }>) => this.patch<{ message: string }>("/cooperative-categories/reorder", data),
+    delete: (id: string) => this.delete<{ message: string }>(`/cooperative-categories/${id}`),
+    getStats: () => this.get<CooperativeCategoryStats>("/cooperative-categories/stats"),
+  };
+
+  /**
    * Payment Types API (Public - No Auth Required)
    */
   paymentTypes = {
@@ -700,6 +719,94 @@ class ApiClient {
       this.get(`/payments/organization/${id}`),
     getOrganizationStats: (filters?: any) =>
       this.get("/payments/organization/stats", filters),
+  };
+
+  /**
+   * Payment Distribution API (Super Admin Only)
+   * Manage monthly payment distributions to cooperatives
+   */
+  paymentDistribution = {
+    /**
+     * Get monthly distribution summaries
+     * GET /api/v1/payments/distribution/monthly
+     */
+    getMonthlyDistributions: (filters?: PaymentDistributionFilters) =>
+      this.getPaginated("/payments/distribution/monthly", filters),
+
+    /**
+     * Get distribution summary for a specific month
+     * GET /api/v1/payments/distribution/monthly/:month
+     */
+    getMonthlyReport: (month: string) => // YYYY-MM format
+      this.get(`/payments/distribution/monthly/${month}`),
+
+    /**
+     * Calculate distribution amounts for a specific month (without saving)
+     * POST /api/v1/payments/distribution/calculate
+     */
+    calculateDistribution: (month: string) =>
+      this.post("/payments/distribution/calculate", { month }),
+
+    /**
+     * Process and save distribution for a specific month
+     * POST /api/v1/payments/distribution/process
+     */
+    processDistribution: (month: string) =>
+      this.post("/payments/distribution/process", { month }),
+
+    /**
+     * Get distribution details for a specific cooperative and month
+     * GET /api/v1/payments/distribution/cooperative/:cooperativeId/:month
+     */
+    getCooperativeDistribution: (cooperativeId: string, month: string) =>
+      this.get(`/payments/distribution/cooperative/${cooperativeId}/${month}`),
+
+    /**
+     * Export distribution report as CSV
+     * GET /api/v1/payments/distribution/export/:month
+     */
+    exportDistribution: (month: string) =>
+      this.get(`/payments/distribution/export/${month}`),
+
+    /**
+     * Get distribution analytics and trends
+     * GET /api/v1/payments/distribution/analytics
+     */
+    getAnalytics: (filters?: { startMonth?: string; endMonth?: string }) =>
+      this.get("/payments/distribution/analytics", filters),
+  };
+
+  /**
+   * Balance Redistribution API (Admin Only)
+   * Manual balance management and redistribution capabilities
+   */
+  balanceRedistribution = {
+    /**
+     * Redistribute balance for a specific payment
+     * POST /api/v1/balance/redistribute/payment/:id
+     */
+    redistributePayment: (paymentId: string) =>
+      this.post(`/balance/redistribute/payment/${paymentId}`, {}),
+
+    /**
+     * Process multiple payments for balance redistribution
+     * POST /api/v1/balance/redistribute/batch
+     */
+    batchRedistribute: (data: { paymentIds: string[] }) =>
+      this.post("/balance/redistribute/batch", data),
+
+    /**
+     * Get payments that need balance redistribution
+     * GET /api/v1/balance/redistribute/pending
+     */
+    getPendingRedistributions: (filters?: {
+      cooperativeId?: string;
+      limit?: number;
+      offset?: number;
+      fromDate?: string;
+      toDate?: string;
+    }) =>
+      this.get("/balance/redistribute/pending", filters),
   };
 
   /**

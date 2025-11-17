@@ -11,7 +11,8 @@ import {
   Building2,
   Users,
   DollarSign,
-  Calendar
+  Calendar,
+  Tags
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,10 +23,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import CreateOrganizationForm from '@/components/organizations/create-organization-form';
+import CategoryDialog from '@/components/cooperative-categories/category-dialog';
+import CategoryCard from '@/components/cooperative-categories/category-card';
 import { withAuth } from '@/context/auth-context';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { apiClient } from '@/lib/api-client';
-import type { Organization, OrganizationFilters } from '@/types';
+import { PREDEFINED_CATEGORIES } from '@/lib/cooperative-categories';
+import type { Organization, OrganizationFilters, CooperativeCategory } from '@/types';
 
 /**
  * Organizations Management Page
@@ -103,6 +107,9 @@ function OrganizationsPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
+  const [categories, setCategories] = useState<CooperativeCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [filters, setFilters] = useState<OrganizationFilters>({
     page: 1,
     limit: 10,
@@ -128,6 +135,23 @@ function OrganizationsPage() {
     fetchOrganizations();
   }, [filters]);
 
+  const fetchCategories = async () => {
+    setCategoriesLoading(true);
+    try {
+      const response = await apiClient.cooperativeCategories.getAll({ page: 1, limit: 50 });
+      const data = (response && (response as any).data) ? (response as any).data : (response as any);
+      const list: CooperativeCategory[] = Array.isArray(data) ? data : (response as any).data || [];
+      setCategories(list);
+    } catch (err: any) {
+      console.error('Failed to load categories:', err);
+      if (process.env.NODE_ENV === 'development') {
+        setCategories(PREDEFINED_CATEGORIES as CooperativeCategory[]);
+      }
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
   const handleOrganizationCreated = () => {
     setIsCreateDialogOpen(false);
     // Refresh the organizations list
@@ -140,6 +164,25 @@ function OrganizationsPage() {
       }
     };
     fetchOrganizations();
+  };
+
+  const handleCategorySaved = (category: CooperativeCategory) => {
+    setCategories(prev => {
+      const exists = prev.find(c => c.id === category.id);
+      if (exists) return prev.map(c => (c.id === category.id ? category : c));
+      return [category, ...prev];
+    });
+  };
+
+  const handleCategoryDeleted = (id: string) => {
+    setCategories(prev => prev.filter(c => c.id !== id));
+  };
+
+  const handleShowCategories = () => {
+    setShowCategories(true);
+    if (categories.length === 0) {
+      fetchCategories();
+    }
   };
 
   const handleSearch = (searchTerm: string) => {
@@ -190,7 +233,11 @@ function OrganizationsPage() {
               Manage registered cooperatives and their subscriptions
             </p>
           </div>
-          <div className="mt-4 sm:mt-0">
+          <div className="mt-4 sm:mt-0 flex gap-2">
+            <Button variant="outline" onClick={handleShowCategories}>
+              <Tags className="h-4 w-4 mr-2" />
+              Categories
+            </Button>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -282,6 +329,78 @@ function OrganizationsPage() {
           </Card>
         </div>
 
+        {/* Category Management Section */}
+        {showCategories && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-copay-navy">Cooperative Categories</CardTitle>
+                  <CardDescription>
+                    Manage categories to organize cooperatives by type
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <CategoryDialog 
+                    onSaved={handleCategorySaved}
+                    trigger={
+                      <Button className="bg-copay-navy hover:bg-copay-navy/90">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Category
+                      </Button>
+                    }
+                  />
+                  <Button variant="outline" onClick={() => setShowCategories(false)}>
+                    Hide Categories
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {categoriesLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-20 bg-gray-200 rounded-lg"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categories.map((category) => (
+                    <CategoryCard
+                      key={category.id}
+                      category={category}
+                      onEdit={handleCategorySaved}
+                      onDeleted={handleCategoryDeleted}
+                    />
+                  ))}
+                </div>
+              )}
+              {!categoriesLoading && categories.length === 0 && (
+                <div className="text-center py-8">
+                  <Tags className="h-12 w-12 text-copay-gray mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-copay-navy mb-2">
+                    No categories found
+                  </h3>
+                  <p className="text-copay-gray mb-4">
+                    Create categories to organize your cooperatives by type
+                  </p>
+                  <CategoryDialog 
+                    onSaved={handleCategorySaved}
+                    trigger={
+                      <Button className="bg-copay-navy hover:bg-copay-navy/90">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create First Category
+                      </Button>
+                    }
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Filters and Search */}
         <Card>
           <CardHeader>
@@ -335,6 +454,7 @@ function OrganizationsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Organization</TableHead>
+                      <TableHead>Category</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Members</TableHead>
                       <TableHead>Plan</TableHead>
@@ -353,6 +473,13 @@ function OrganizationsPage() {
                               {org.code || 'N/A'}
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {org.category ? (
+                            <span className="text-sm text-copay-navy">{org.category.name}</span>
+                          ) : (
+                            <span className="text-sm text-copay-gray">Uncategorized</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(org.status)}

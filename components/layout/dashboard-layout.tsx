@@ -75,7 +75,19 @@ const navigationItems = [
     name: 'Payments',
     href: '/payments',
     icon: CreditCard,
-    description: 'Payment monitoring'
+    description: 'Payment monitoring & distributions',
+    submenu: [
+      {
+        name: 'Payment Overview',
+        href: '/payments',
+        description: 'View all payments'
+      },
+      {
+        name: 'Distributions',
+        href: '/payments/distributions',
+        description: 'Manage monthly distributions'
+      }
+    ]
   },
   {
     name: 'Tenants',
@@ -173,6 +185,74 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = isCurrentPath(item.href);
+            const hasSubmenu = item.submenu && item.submenu.length > 0;
+            const [isSubmenuOpen, setIsSubmenuOpen] = useState(isActive || pathname.startsWith(item.href));
+
+            if (hasSubmenu) {
+              return (
+                <div key={item.href} className="space-y-1">
+                  <button
+                    onClick={() => setIsSubmenuOpen(!isSubmenuOpen)}
+                    className={cn(
+                      "flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group w-full",
+                      isActive
+                        ? "bg-copay-blue text-white shadow-md"
+                        : "text-copay-gray hover:bg-gray-50 hover:text-copay-navy"
+                    )}
+                  >
+                    <Icon className={cn(
+                      "h-5 w-5 transition-colors",
+                      isActive ? "text-white" : "text-copay-gray group-hover:text-copay-navy"
+                    )} />
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="font-medium truncate">{item.name}</div>
+                      <div className={cn(
+                        "text-xs truncate",
+                        isActive ? "text-white/80" : "text-copay-gray"
+                      )}>
+                        {item.description}
+                      </div>
+                    </div>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      isSubmenuOpen ? "rotate-180" : "",
+                      isActive ? "text-white" : "text-copay-gray"
+                    )} />
+                  </button>
+                  
+                  {isSubmenuOpen && (
+                    <div className="ml-6 space-y-1 border-l-2 border-copay-light-gray pl-3">
+                      {item.submenu.map((subItem) => {
+                        const isSubActive = isCurrentPath(subItem.href);
+                        return (
+                          <Link
+                            key={subItem.href}
+                            href={subItem.href}
+                            onClick={() => setSidebarOpen(false)}
+                            className={cn(
+                              "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group",
+                              isSubActive
+                                ? "bg-copay-blue text-white shadow-md"
+                                : "text-copay-gray hover:bg-gray-50 hover:text-copay-navy"
+                            )}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{subItem.name}</div>
+                              <div className={cn(
+                                "text-xs truncate",
+                                isSubActive ? "text-white/80" : "text-copay-gray"
+                              )}>
+                                {subItem.description}
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
 
             return (
               <Link

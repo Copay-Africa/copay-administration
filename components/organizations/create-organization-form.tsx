@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, User, Plus, X, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
-import type { CreateOrganizationRequest, OrganizationAdmin } from '@/types';
+import { PREDEFINED_CATEGORIES } from '@/lib/cooperative-categories';
+import type { CreateOrganizationRequest, OrganizationAdmin, CooperativeCategory } from '@/types';
 
 interface AxiosError {
     response?: {
@@ -39,6 +40,8 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [step, setStep] = useState<'organization' | 'admin'>('organization');
+    const [categories, setCategories] = useState<CooperativeCategory[]>([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(false);
 
     const [organizationData, setOrganizationData] = useState<CreateOrganizationRequest>({
         name: '',
@@ -47,6 +50,7 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
         address: '',
         phone: '',
         email: '',
+        categoryId: '',
         settings: {
             currency: 'RWF',
             timezone: 'Africa/Kigali',
@@ -63,6 +67,27 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
     });
 
     const [createdOrganizationId, setCreatedOrganizationId] = useState<string | null>(null);
+
+    // Fetch categories on component mount
+    React.useEffect(() => {
+        const fetchCategories = async () => {
+            setCategoriesLoading(true);
+            try {
+                const response = await apiClient.cooperativeCategories.getAll({ page: 1, limit: 50 });
+                const data = (response && (response as any).data) ? (response as any).data : (response as any);
+                const list: CooperativeCategory[] = Array.isArray(data) ? data : (response as any).data || [];
+                setCategories(list.filter(cat => cat.isActive));
+            } catch (err: any) {
+                console.error('Failed to load categories:', err);
+                if (process.env.NODE_ENV === 'development') {
+                    setCategories(PREDEFINED_CATEGORIES.filter(cat => cat.isActive) as CooperativeCategory[]);
+                }
+            } finally {
+                setCategoriesLoading(false);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const handleOrganizationChange = (field: keyof CreateOrganizationRequest, value: string | object) => {
         setOrganizationData(prev => ({
@@ -128,6 +153,10 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
             setError('Address is required');
             return false;
         }
+        if (!organizationData.categoryId) {
+            setError('Please select a category for the cooperative');
+            return false;
+        }
         return true;
     };
 
@@ -161,6 +190,12 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
         setIsLoading(true);
         try {
             console.log('Creating organization with data:', organizationData);
+            console.log('Selected categoryId:', organizationData.categoryId);
+            
+            // Find the selected category name for logging
+            const selectedCategory = categories.find(cat => cat.id === organizationData.categoryId);
+            console.log('Selected category details:', selectedCategory);
+            
             const response = await apiClient.organizations.create(organizationData);
             console.log('Organization created - full response:', response);
             console.log('Response type:', typeof response);
@@ -452,6 +487,36 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
                             placeholder="Brief description of the organization"
                             disabled={isLoading}
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="category">Category *</Label>
+                        <Select
+                            value={organizationData.categoryId}
+                            onValueChange={(value) => handleOrganizationChange('categoryId', value)}
+                            disabled={isLoading || categoriesLoading}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder={categoriesLoading ? "Loading categories..." : "Select a category"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map((category) => (
+                                    <SelectItem key={category.id} value={category.id}>
+                                        <span>{category.name}</span>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {organizationData.categoryId && (
+                            <div className="flex items-center gap-2 text-sm text-copay-blue">
+                                <span>✓</span>
+                                <span>Selected: {categories.find(cat => cat.id === organizationData.categoryId)?.name}</span>
+                            </div>
+                        )}
+                        <p className="text-xs text-gray-500">Choose the type that best describes this cooperative</p>
+                        {categories.length === 0 && !categoriesLoading && (
+                            <p className="text-xs text-amber-600">No categories available. Categories can be managed from the main Organizations page.</p>
+                        )}
                     </div>
                 </div>
 
