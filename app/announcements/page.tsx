@@ -249,7 +249,7 @@ function AnnouncementsPage() {
                             <Megaphone className="h-6 w-6 text-copay-blue" />
                             Announcements Management
                         </h1>
-                        <p className="text-copay-gray">
+                        <p className="text-copay-gray mt-1">
                             Create and manage system-wide announcements for tenants and administrators
                         </p>
                     </div>
@@ -258,7 +258,7 @@ function AnnouncementsPage() {
                             <Download className="h-4 w-4 mr-2" />
                             Export Report
                         </Button>
-                        <Button asChild>
+                        <Button asChild className="bg-copay-blue hover:bg-copay-navy text-white">
                             <Link href="/announcements/create">
                                 <Plus className="h-4 w-4 mr-2" />
                                 Create Announcement
@@ -269,17 +269,17 @@ function AnnouncementsPage() {
 
                 {/* Announcement Statistics */}
                 {error ? (
-                    <Card>
+                    <Card className="border-red-200 bg-red-50">
                         <CardContent className="flex flex-col items-center justify-center py-8">
                             <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
                             <h3 className="text-lg font-medium text-copay-navy mb-2">Failed to load announcements</h3>
                             <p className="text-copay-gray mb-4">{error}</p>
-                            <Button onClick={() => window.location.reload()}>Try Again</Button>
+                            <Button onClick={() => window.location.reload()} className="bg-copay-blue hover:bg-copay-navy text-white">Try Again</Button>
                         </CardContent>
                     </Card>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Total Announcements
@@ -289,7 +289,7 @@ function AnnouncementsPage() {
                             <CardContent>
                                 <div className="text-2xl font-bold text-copay-navy">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.totalAnnouncements || 0)
                                     )}
@@ -297,17 +297,17 @@ function AnnouncementsPage() {
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Sent Today
                                 </CardTitle>
-                                <Send className="h-4 w-4 text-green-500" />
+                                <Send className="h-4 w-4 text-copay-blue" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-green-600">
+                                <div className="text-2xl font-bold text-copay-blue">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.sentToday || 0)
                                     )}
@@ -315,17 +315,17 @@ function AnnouncementsPage() {
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Scheduled
                                 </CardTitle>
-                                <Clock className="h-4 w-4 text-blue-500" />
+                                <Clock className="h-4 w-4 text-copay-blue" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-blue-600">
+                                <div className="text-2xl font-bold text-copay-blue">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.byStatus?.SCHEDULED || 0)
                                     )}
@@ -333,17 +333,17 @@ function AnnouncementsPage() {
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Draft
                                 </CardTitle>
-                                <Edit className="h-4 w-4 text-gray-500" />
+                                <Edit className="h-4 w-4 text-copay-gray" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-gray-600">
+                                <div className="text-2xl font-bold text-copay-navy">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.byStatus?.DRAFT || 0)
                                     )}
@@ -354,9 +354,9 @@ function AnnouncementsPage() {
                 )}
 
                 {/* Filters */}
-                <Card>
+                <Card className="border-copay-light-gray">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-copay-navy">
                             <Filter className="h-5 w-5" />
                             Filter Announcements
                         </CardTitle>
@@ -423,9 +423,9 @@ function AnnouncementsPage() {
                 </Card>
 
                 {/* Announcements Table */}
-                <Card>
+                <Card className="border-copay-light-gray">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-copay-navy">
                             <Megaphone className="h-5 w-5" />
                             Announcements ({formatNumber(announcements.length)})
                         </CardTitle>
@@ -437,19 +437,19 @@ function AnnouncementsPage() {
                         {loading ? (
                             <div className="space-y-4">
                                 {[...Array(5)].map((_, i) => (
-                                    <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+                                    <div key={i} className="h-16 bg-copay-light-gray rounded animate-pulse"></div>
                                 ))}
                             </div>
                         ) : announcements.length === 0 ? (
                             <div className="text-center py-8">
-                                <Megaphone className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                <Megaphone className="h-12 w-12 text-copay-gray mx-auto mb-4 opacity-50" />
                                 <h3 className="text-lg font-medium text-copay-navy mb-2">No announcements found</h3>
                                 <p className="text-copay-gray mb-4">
                                     {Object.values(filters).some(v => v)
                                         ? 'Try adjusting your filters to see more announcements.'
                                         : 'Create your first system announcement to get started.'}
                                 </p>
-                                <Button asChild>
+                                <Button asChild className="bg-copay-blue hover:bg-copay-navy text-white">
                                     <Link href="/announcements/create">
                                         <Plus className="h-4 w-4 mr-2" />
                                         Create First Announcement

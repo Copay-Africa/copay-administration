@@ -106,9 +106,9 @@ function ActivitiesPage() {
             } else if (isNetworkError) {
                 errorMessage = `Cannot connect to the API server (${process.env.NEXT_PUBLIC_API_URL}). Please check if the server is running.`;
                 
-                // In development, provide mock data as fallback
+                // In development, provide empty data as fallback
                 if (process.env.NODE_ENV === 'development') {
-                    console.warn('Using mock data due to API connection failure');
+                    console.warn('Using empty data due to API connection failure');
                     setActivities([]);
                     setStats({
                         total: 0,
@@ -118,7 +118,7 @@ function ActivitiesPage() {
                         last24Hours: 0,
                         last7Days: 0
                     });
-                    setError(''); // Clear error when using mock data
+                    setError(''); // Clear error when using empty fallback data
                     return;
                 }
             } else {

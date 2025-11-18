@@ -229,11 +229,8 @@ export default function CreateOrganizationForm({ onSuccess, onCancel }: CreateOr
                 setStep('admin');
             } else {
                 console.error('Could not extract organization ID from response:', responseData);
-                // For now, let's create a mock ID to continue the flow
-                const mockId = 'mock-' + Date.now();
-                console.log('Using mock organization ID:', mockId);
-                setCreatedOrganizationId(mockId);
-                setStep('admin');
+                setError('Organization created but could not extract ID from response');
+                return;
             }
         } catch (error) {
             console.error('Failed to create organization:', error);

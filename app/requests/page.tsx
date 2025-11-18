@@ -33,7 +33,7 @@ import type { AccountRequest, AccountRequestFilters, AccountRequestStats } from 
 
 /**
  * Account Requests Management Page
- * Manage account requests across all cooperatives (Super Admin Only)
+ * Manage account requests across all cooperatives 
  */
 
 function AccountRequestsPage() {

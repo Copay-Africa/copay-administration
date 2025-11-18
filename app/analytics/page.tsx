@@ -159,30 +159,14 @@ export default function AnalyticsPage() {
     // Create chart data using documented endpoints only
     const fetchChartData = useCallback(async () => {
         try {
-            // Create mock chart data since dashboard chart endpoints are not documented
-            const createMockChartData = (label: string, dataPoints: number[] = [10, 20, 15, 25, 30]): ChartData => ({
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
-                datasets: [{
-                    label,
-                    data: dataPoints,
-                    backgroundColor: '#3b82f6',
-                    borderColor: '#1d4ed8'
-                }]
-            });
-
-            // Since dashboard chart endpoints are not documented in API, use mock data
-            // In a real implementation, you would query list endpoints and aggregate data by time periods
-            const payments = createMockChartData('Payments', [100, 150, 120, 180, 200]);
-            const users = createMockChartData('Users', [50, 65, 80, 95, 110]);
-            const complaints = createMockChartData('Complaints', [5, 8, 3, 12, 7]);
-            const activities = createMockChartData('Activities', [500, 650, 720, 800, 920]);
-
-            setPaymentsChart(payments);
-            setUsersChart(users);
-            setComplaintsChart(complaints);
-            setActivitiesChart(activities);
+            // Chart data endpoints are not available in the current API
+            // Charts will show "no data" state until proper endpoints are implemented
+            setPaymentsChart(null);
+            setUsersChart(null);
+            setComplaintsChart(null);
+            setActivitiesChart(null);
         } catch (err) {
-            console.error('Failed to generate chart data:', err);
+            console.error('Failed to load chart data:', err);
             // Set null charts to show "no data" state
             setPaymentsChart(null);
             setUsersChart(null);

@@ -181,11 +181,11 @@ export default function ComplaintsPage() {
             } else if (error.response?.status === 404) {
                 errorMessage = 'Complaints API endpoint not found. The server may not be configured correctly.';
             } else if (isNetworkError) {
-                errorMessage = `Cannot connect to the API server (${process.env.NEXT_PUBLIC_API_URL}). Please check if the server is running or use mock data for development.`;
+                errorMessage = `Cannot connect to the API server (${process.env.NEXT_PUBLIC_API_URL}). Please check if the server is running.`;
                 
-                // In development, provide mock data as fallback
+                // In development, provide empty data as fallback
                 if (process.env.NODE_ENV === 'development') {
-                    console.warn('Using mock data due to API connection failure');
+                    console.warn('Using empty data due to API connection failure');
                     setComplaints([]);
                     setStats({
                         total: 0,
@@ -203,7 +203,7 @@ export default function ComplaintsPage() {
                         ],
                         recentComplaints: []
                     });
-                    setError(''); // Clear error when using mock data
+                    setError(''); // Clear error when using empty fallback data
                     return;
                 }
             } else {

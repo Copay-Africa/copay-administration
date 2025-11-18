@@ -887,8 +887,77 @@ export interface CooperativeCategoryStats {
 }
 
 /**
- * Balance Redistribution Management types
+ * Balance Redistribution & Cooperative Analysis Management types
  */
+
+/**
+ * Cooperative Balance Analysis - Comprehensive payment analysis for cooperatives
+ * Based on API: GET /api/v1/balances/analysis/cooperative/:cooperativeId
+ * 
+ * How It Works:
+ * - API fetches ALL completed payments for the specified cooperative
+ * - For each payment, calculates: baseAmount = payment.amount - 500 RWF (goes to cooperative)
+ * - Platform fee = 500 RWF per payment (stays with platform)
+ * - Aggregates all calculations to provide comprehensive analysis
+ */
+export interface CooperativeBalanceAnalysis {
+  cooperative: {
+    id: string;
+    name: string;
+  };
+  summary: {
+    totalPayments: number;              // Total number of completed payments
+    totalRevenue: number;               // Total money paid to cooperative (excluding fees)
+    totalFees: number;                  // Total platform fees collected (totalPayments × 500)
+    totalPlatformRevenue: number;       // Total money paid by tenants (totalRevenue + totalFees)
+    averagePaymentAmount: number;       // Average amount paid per payment
+    averageFeePerPayment: number;       // Always 500 RWF per payment
+  };
+  paymentTypeBreakdown: PaymentTypeBreakdown[];
+}
+
+/**
+ * New API Response Types for Cooperative Balances
+ */
+export interface CooperativeBalance {
+  cooperative: {
+    id: string;
+    name: string;
+    code: string;
+    status: string;
+  };
+  balance: {
+    currentBalance: number;
+    totalReceived: number;
+    totalWithdrawn: number;
+    pendingBalance: number;
+    lastPaymentAt: string | null;
+  };
+  stats: {
+    totalPayments: number;
+    totalRevenue: number;
+    totalFees: number;
+    averagePaymentAmount: number;
+  };
+}
+
+export interface CooperativeBalancesResponse {
+  cooperatives: CooperativeBalance[];
+  summary: {
+    totalCooperatives: number;
+    totalBalance: number;
+    totalRevenue: number;
+    totalFees: number;
+  };
+}
+
+export interface PaymentTypeBreakdown {
+  paymentType: string;                  // e.g., "Monthly Rent", "Utilities", etc.
+  count: number;                        // Number of payments of this type
+  revenue: number;                      // Total amount paid to cooperative for this type
+  fees: number;                         // Total platform fees for this type (count × 500)
+}
+
 export interface BalanceRedistributionResult {
   id: string;
   amount: number;
@@ -1000,3 +1069,4 @@ export interface PendingRedistributionFilters {
   fromDate?: string;
   toDate?: string;
 }
+

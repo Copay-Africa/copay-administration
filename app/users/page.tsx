@@ -33,7 +33,7 @@ import type { User, UserFilters, UserStats, UserRole } from '@/types';
 
 /**
  * Users Management Page
- * Manage users across all cooperatives (Super Admin Only)
+ * Manage users across all cooperatives 
  */
 
 function UsersPage() {
@@ -175,7 +175,7 @@ function UsersPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-copay-navy">User Management</h1>
-                        <p className="text-copay-gray">
+                        <p className="text-copay-gray mt-1">
                             Manage user accounts across all cooperatives
                         </p>
                     </div>
@@ -185,7 +185,7 @@ function UsersPage() {
                             Export Report
                         </Button>
                         <CreateUserDialog onUserCreated={fetchUsersAndStats}>
-                            <Button>
+                            <Button className="bg-copay-blue hover:bg-copay-navy text-white">
                                 <UserPlus className="h-4 w-4 mr-2" />
                                 Add User
                             </Button>
@@ -195,17 +195,17 @@ function UsersPage() {
 
                 {/* User Statistics */}
                 {error ? (
-                    <Card>
+                    <Card className="border-red-200 bg-red-50">
                         <CardContent className="flex flex-col items-center justify-center py-8">
                             <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
                             <h3 className="text-lg font-medium text-copay-navy mb-2">Failed to load users</h3>
                             <p className="text-copay-gray mb-4">{error}</p>
-                            <Button onClick={() => window.location.reload()}>Try Again</Button>
+                            <Button onClick={() => window.location.reload()} className="bg-copay-blue hover:bg-copay-navy text-white">Try Again</Button>
                         </CardContent>
                     </Card>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Total Users
@@ -215,7 +215,7 @@ function UsersPage() {
                             <CardContent>
                                 <div className="text-2xl font-bold text-copay-navy">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.total || 0)
                                     )}
@@ -223,7 +223,7 @@ function UsersPage() {
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Super Admins
@@ -233,7 +233,7 @@ function UsersPage() {
                             <CardContent>
                                 <div className="text-2xl font-bold text-purple-600">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.byRole?.find(r => r.role === 'SUPER_ADMIN')?.count || 0)
                                     )}
@@ -241,17 +241,17 @@ function UsersPage() {
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Org Admins
                                 </CardTitle>
-                                <Building2 className="h-4 w-4 text-blue-500" />
+                                <Building2 className="h-4 w-4 text-copay-blue" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-blue-600">
+                                <div className="text-2xl font-bold text-copay-blue">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.byRole?.find(r => r.role === 'ORGANIZATION_ADMIN')?.count || 0)
                                     )}
@@ -259,17 +259,17 @@ function UsersPage() {
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Tenants
                                 </CardTitle>
-                                <UserIcon className="h-4 w-4 text-green-500" />
+                                <UserIcon className="h-4 w-4 text-copay-navy" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-green-600">
+                                <div className="text-2xl font-bold text-copay-navy">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.byRole?.find(r => r.role === 'TENANT')?.count || 0)
                                     )}
@@ -280,9 +280,9 @@ function UsersPage() {
                 )}
 
                 {/* Filters */}
-                <Card>
+                <Card className="border-copay-light-gray">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-copay-navy">
                             <Filter className="h-5 w-5" />
                             Filter Users
                         </CardTitle>
@@ -325,9 +325,9 @@ function UsersPage() {
                 </Card>
 
                 {/* Users Table */}
-                <Card>
+                <Card className="border-copay-light-gray">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-copay-navy">
                             <UsersIcon className="h-5 w-5" />
                             Users ({formatNumber(users.length)})
                         </CardTitle>
@@ -339,12 +339,12 @@ function UsersPage() {
                         {loading ? (
                             <div className="space-y-4">
                                 {[...Array(5)].map((_, i) => (
-                                    <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+                                    <div key={i} className="h-16 bg-copay-light-gray rounded animate-pulse"></div>
                                 ))}
                             </div>
                         ) : users.length === 0 ? (
                             <div className="text-center py-8">
-                                <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                <UsersIcon className="h-12 w-12 text-copay-gray mx-auto mb-4 opacity-50" />
                                 <h3 className="text-lg font-medium text-copay-navy mb-2">No users found</h3>
                                 <p className="text-copay-gray">
                                     {filters.search || filters.role

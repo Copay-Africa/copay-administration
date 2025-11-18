@@ -26,13 +26,17 @@ import type {
   CooperativeCategory,
   CooperativeCategoryFilters,
   CooperativeCategoryStats,
-  PaymentDistributionFilters,
-  PaymentDistributionSummary,
-  MonthlyDistributionReport,
+  CooperativeBalanceAnalysis,
+  CooperativeBalancesResponse,
+  BalanceRedistributionResult,
+  BatchRedistributionRequest,
+  BatchRedistributionResult,
+  PendingRedistributionsResponse,
+  PendingRedistributionFilters,
 } from "@/types";
 
 // Extend axios types for our custom metadata
-declare module 'axios' {
+declare module "axios" {
   interface InternalAxiosRequestConfig {
     metadata?: {
       startTime: number;
@@ -64,6 +68,7 @@ interface ApiClientConfig {
   baseURL: string;
   timeout: number;
   retry: RetryConfig;
+  enableFallbacks: boolean;
 }
 
 class ApiClient {
@@ -73,7 +78,8 @@ class ApiClient {
 
   constructor() {
     this.config = {
-      baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1",
+      baseURL:
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1",
       timeout: 30000,
       retry: {
         maxRetries: 3,
@@ -81,6 +87,7 @@ class ApiClient {
         maxDelay: 10000,
         retryOn: [408, 429, 500, 502, 503, 504], // Timeout, Rate limit, Server errors
       },
+      enableFallbacks: process.env.NODE_ENV === "development",
     };
 
     this.instance = axios.create({
@@ -116,7 +123,7 @@ class ApiClient {
         return config;
       },
       (error) => {
-        console.error('Request setup failed:', error);
+        console.error("Request setup failed:", error);
         return Promise.reject(this.normalizeError(error));
       }
     );
@@ -125,9 +132,16 @@ class ApiClient {
     this.instance.interceptors.response.use(
       (response) => {
         // Log successful request in development
-        if (process.env.NODE_ENV === 'development' && response.config.metadata) {
+        if (
+          process.env.NODE_ENV === "development" &&
+          response.config.metadata
+        ) {
           const duration = Date.now() - response.config.metadata.startTime;
-          console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url} - ${duration}ms`);
+          console.log(
+            `✅ ${response.config.method?.toUpperCase()} ${
+              response.config.url
+            } - ${duration}ms`
+          );
         }
         return response;
       },
@@ -159,8 +173,13 @@ class ApiClient {
         }
 
         // Log error in development
-        if (process.env.NODE_ENV === 'development') {
-          console.error(`❌ ${originalRequest.method?.toUpperCase()} ${originalRequest.url}`, error.response?.data || error.message);
+        if (process.env.NODE_ENV === "development") {
+          console.error(
+            `❌ ${originalRequest.method?.toUpperCase()} ${
+              originalRequest.url
+            }`,
+            error.response?.data || error.message
+          );
         }
 
         return Promise.reject(this.normalizeError(error));
@@ -180,14 +199,18 @@ class ApiClient {
    */
   private shouldRetry(error: AxiosError): boolean {
     const { retry } = this.config;
-    
+
     // Don't retry if it's a request cancellation
     if (axios.isCancel(error)) {
       return false;
     }
 
     // Don't retry client errors (4xx except specific ones)
-    if (error.response?.status && error.response.status >= 400 && error.response.status < 500) {
+    if (
+      error.response?.status &&
+      error.response.status >= 400 &&
+      error.response.status < 500
+    ) {
       return retry.retryOn.includes(error.response.status);
     }
 
@@ -198,7 +221,10 @@ class ApiClient {
   /**
    * Retry request with exponential backoff
    */
-  private async retryRequest(originalRequest: any, error: AxiosError): Promise<any> {
+  private async retryRequest(
+    originalRequest: any,
+    error: AxiosError
+  ): Promise<any> {
     const { retry } = this.config;
     const retryCount = originalRequest._retryCount || 0;
 
@@ -212,7 +238,11 @@ class ApiClient {
     const jitter = Math.random() * 1000; // Add jitter to prevent thundering herd
     const delay = Math.min(exponentialDelay + jitter, retry.maxDelay);
 
-    console.log(`🔄 Retrying request (${retryCount + 1}/${retry.maxRetries}) after ${delay}ms`);
+    console.log(
+      `🔄 Retrying request (${retryCount + 1}/${
+        retry.maxRetries
+      }) after ${delay}ms`
+    );
 
     originalRequest._retryCount = retryCount + 1;
 
@@ -224,7 +254,7 @@ class ApiClient {
    * Sleep utility for retry delays
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -232,15 +262,16 @@ class ApiClient {
    */
   private normalizeError(error: any): Error {
     if (axios.isCancel(error)) {
-      return new Error('Request was cancelled');
+      return new Error("Request was cancelled");
     }
 
     if (axios.isAxiosError(error)) {
-      const message = error.response?.data?.message || 
-                     error.response?.data?.error || 
-                     error.message || 
-                     'An unexpected error occurred';
-      
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "An unexpected error occurred";
+
       const normalizedError = new Error(message);
       (normalizedError as any).status = error.response?.status;
       (normalizedError as any).code = error.code;
@@ -252,6 +283,29 @@ class ApiClient {
     }
 
     return new Error(String(error));
+  }
+
+  /**
+   * Check if error indicates an unimplemented endpoint
+   */
+  private isEndpointNotImplemented(error: any): boolean {
+    return (
+      error.response?.status === 404 &&
+      (error.response?.data?.message?.includes("endpoint") ||
+        error.response?.data?.message?.includes("route") ||
+        error.config?.url?.includes("/payments/distribution") ||
+        error.config?.url?.includes("/balances/redistribute"))
+    );
+  }
+
+  /**
+   * Create user-friendly error for unimplemented endpoints
+   */
+  private createFallbackError(endpoint: string): Error {
+    return new Error(
+      `The ${endpoint} endpoint is not yet implemented on the backend. ` +
+        `This feature is currently under development. Please contact your administrator for updates.`
+    );
   }
 
   /**
@@ -430,7 +484,10 @@ class ApiClient {
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      console.log("Making login request to:", `${this.config.baseURL}/auth/login`);
+      console.log(
+        "Making login request to:",
+        `${this.config.baseURL}/auth/login`
+      );
       console.log("Request payload:", { ...credentials, pin: "****" });
 
       const response = await this.instance.post("/auth/login", credentials);
@@ -678,13 +735,23 @@ class ApiClient {
    * Cooperative Categories API
    */
   cooperativeCategories = {
-    getAll: (filters?: CooperativeCategoryFilters) => this.getPaginated<CooperativeCategory>("/cooperative-categories", filters),
-    getById: (id: string) => this.get<CooperativeCategory>(`/cooperative-categories/${id}`),
-    create: (data: Partial<CooperativeCategory>) => this.post<CooperativeCategory>("/cooperative-categories", data),
-    update: (id: string, data: Partial<CooperativeCategory>) => this.patch<CooperativeCategory>(`/cooperative-categories/${id}`, data),
-    reorder: (data: Array<{ id: string; sortOrder: number }>) => this.patch<{ message: string }>("/cooperative-categories/reorder", data),
-    delete: (id: string) => this.delete<{ message: string }>(`/cooperative-categories/${id}`),
-    getStats: () => this.get<CooperativeCategoryStats>("/cooperative-categories/stats"),
+    getAll: (filters?: CooperativeCategoryFilters) =>
+      this.getPaginated<CooperativeCategory>(
+        "/cooperative-categories",
+        filters
+      ),
+    getById: (id: string) =>
+      this.get<CooperativeCategory>(`/cooperative-categories/${id}`),
+    create: (data: Partial<CooperativeCategory>) =>
+      this.post<CooperativeCategory>("/cooperative-categories", data),
+    update: (id: string, data: Partial<CooperativeCategory>) =>
+      this.patch<CooperativeCategory>(`/cooperative-categories/${id}`, data),
+    reorder: (data: Array<{ id: string; sortOrder: number }>) =>
+      this.patch<{ message: string }>("/cooperative-categories/reorder", data),
+    delete: (id: string) =>
+      this.delete<{ message: string }>(`/cooperative-categories/${id}`),
+    getStats: () =>
+      this.get<CooperativeCategoryStats>("/cooperative-categories/stats"),
   };
 
   /**
@@ -722,95 +789,83 @@ class ApiClient {
   };
 
   /**
-   * Payment Distribution API (Super Admin Only)
-   * Manage monthly payment distributions to cooperatives
-   */
-  paymentDistribution = {
-    /**
-     * Get monthly distribution summaries
-     * GET /api/v1/payments/distribution/monthly
-     */
-    getMonthlyDistributions: (filters?: PaymentDistributionFilters) =>
-      this.getPaginated("/payments/distribution/monthly", filters),
-
-    /**
-     * Get distribution summary for a specific month
-     * GET /api/v1/payments/distribution/monthly/:month
-     */
-    getMonthlyReport: (month: string) => // YYYY-MM format
-      this.get(`/payments/distribution/monthly/${month}`),
-
-    /**
-     * Calculate distribution amounts for a specific month (without saving)
-     * POST /api/v1/payments/distribution/calculate
-     */
-    calculateDistribution: (month: string) =>
-      this.post("/payments/distribution/calculate", { month }),
-
-    /**
-     * Process and save distribution for a specific month
-     * POST /api/v1/payments/distribution/process
-     */
-    processDistribution: (month: string) =>
-      this.post("/payments/distribution/process", { month }),
-
-    /**
-     * Get distribution details for a specific cooperative and month
-     * GET /api/v1/payments/distribution/cooperative/:cooperativeId/:month
-     */
-    getCooperativeDistribution: (cooperativeId: string, month: string) =>
-      this.get(`/payments/distribution/cooperative/${cooperativeId}/${month}`),
-
-    /**
-     * Export distribution report as CSV
-     * GET /api/v1/payments/distribution/export/:month
-     */
-    exportDistribution: (month: string) =>
-      this.get(`/payments/distribution/export/${month}`),
-
-    /**
-     * Get distribution analytics and trends
-     * GET /api/v1/payments/distribution/analytics
-     */
-    getAnalytics: (filters?: { startMonth?: string; endMonth?: string }) =>
-      this.get("/payments/distribution/analytics", filters),
-  };
-
-  /**
-   * Balance Redistribution API (Admin Only)
-   * Manual balance management and redistribution capabilities
+   * Balance Redistribution & Cooperative Analysis API (Admin Only)
+   * 
+   * Comprehensive balance distribution analysis helps administrators understand and track 
+   * how payment amounts are distributed between cooperatives and platform fees.
+   * 
+   * Required Roles: ORGANIZATION_ADMIN, SUPER_ADMIN
    */
   balanceRedistribution = {
     /**
-     * Redistribute balance for a specific payment
-     * POST /api/v1/balance/redistribute/payment/:id
+     * Get all cooperative balances
+     * API: GET /api/v1/balances/cooperatives?month=YYYY-MM
+     * 
+     * Fetches all cooperatives with their balance information and statistics
+     * @param month - Optional month filter in YYYY-MM format (defaults to current month)
      */
-    redistributePayment: (paymentId: string) =>
-      this.post(`/balance/redistribute/payment/${paymentId}`, {}),
+    getCooperativeBalances: async (month?: string): Promise<CooperativeBalancesResponse> => {
+      const params = month ? { month } : {};
+      const response: AxiosResponse<CooperativeBalancesResponse> = await this.instance.get('/balances/cooperatives', { params });
+      return response.data;
+    },
+
+    /**
+     * Get comprehensive balance analysis for a specific cooperative.
+     * API: GET /api/v1/balances/analysis/cooperative/:cooperativeId
+     * 
+     * Fetches ALL completed payments for that cooperative and calculates:
+     * - Total Paid Amount (what tenants actually paid)
+     * - Cooperative Revenue (baseAmount = amount - 500 RWF fee)  
+     * - Platform Fees (500 RWF per payment)
+     * - Payment Type Breakdown
+     * - Monthly Trends
+     */
+    getCooperativeAnalysis: async (cooperativeId: string) => {
+      return await this.get<CooperativeBalanceAnalysis>(`/balances/analysis/cooperative/${cooperativeId}`);
+    },
+
+    /**
+     * Redistribute balance for a specific payment
+     * POST /balances/redistribute/payment/:id
+     * 
+     * Shows exactly how much goes to the cooperative (baseAmount) and how much 
+     * remains as platform fee (500 RWF)
+     */
+    redistributePayment: async (
+      paymentId: string
+    ): Promise<BalanceRedistributionResult> => {
+      return await this.post(`/balances/redistribute/payment/${paymentId}`, {});
+    },
 
     /**
      * Process multiple payments for balance redistribution
-     * POST /api/v1/balance/redistribute/batch
+     * POST /balances/redistribute/batch
+     * 
+     * View and redistribute balance allocation for multiple payments in a single batch operation
      */
-    batchRedistribute: (data: { paymentIds: string[] }) =>
-      this.post("/balance/redistribute/batch", data),
+    batchRedistribute: async (
+      data: BatchRedistributionRequest
+    ): Promise<BatchRedistributionResult> => {
+      return await this.post("/balances/redistribute/batch", data);
+    },
 
     /**
      * Get payments that need balance redistribution
-     * GET /api/v1/balance/redistribute/pending
+     * GET /balances/redistribute/pending
+     * 
+     * Query payments that need proper balance distribution to cooperatives.
+     * Useful for identifying legacy payments where balance allocation hasn't been calculated.
      */
-    getPendingRedistributions: (filters?: {
-      cooperativeId?: string;
-      limit?: number;
-      offset?: number;
-      fromDate?: string;
-      toDate?: string;
-    }) =>
-      this.get("/balance/redistribute/pending", filters),
+    getPendingRedistributions: async (
+      filters?: PendingRedistributionFilters
+    ): Promise<PendingRedistributionsResponse> => {
+      return await this.get("/balances/redistribute/pending", filters);
+    },
   };
 
   /**
-   * Tenants API (Super Admin Only)
+   * Tenants API 
    * Complete tenant management across all cooperatives
    */
   tenants = {

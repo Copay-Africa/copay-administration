@@ -2266,7 +2266,7 @@ Use these test credentials:
 
 ## Super Admin Tenant Management APIs
 
-### Create Tenant (Super Admin Only)
+### Create Tenant 
 
 - **POST** `/api/v1/users/tenants`
 - **Auth**: Required (SUPER_ADMIN role)
@@ -2287,7 +2287,7 @@ Use these test credentials:
 - **Description**: Create a new tenant and assign them to a specific cooperative
 - **Response**: Enhanced tenant details with statistics
 
-### Get All Tenants (Super Admin Only)
+### Get All Tenants 
 
 - **GET** `/api/v1/users/tenants`
 - **Auth**: Required (SUPER_ADMIN role)
@@ -2303,7 +2303,7 @@ Use these test credentials:
   - `sortOrder` (optional): asc/desc
 - **Description**: Get paginated list of all tenants across all cooperatives with detailed information
 
-### Get Tenant Statistics (Super Admin Only)
+### Get Tenant Statistics 
 
 - **GET** `/api/v1/users/tenants/stats`
 - **Auth**: Required (SUPER_ADMIN role)
@@ -2325,7 +2325,7 @@ Use these test credentials:
 }
 ```
 
-### Get Tenant Details (Super Admin Only)
+### Get Tenant Details 
 
 - **GET** `/api/v1/users/tenants/:id`
 - **Auth**: Required (SUPER_ADMIN role)
@@ -2336,7 +2336,7 @@ Use these test credentials:
   - Payment statistics (total payments, amount, last payment)
   - Active complaints count
 
-### Update Tenant (Super Admin Only)
+### Update Tenant 
 
 - **PATCH** `/api/v1/users/tenants/:id`
 - **Auth**: Required (SUPER_ADMIN role)
@@ -2355,7 +2355,7 @@ Use these test credentials:
 
 - **Description**: Update tenant information, move between cooperatives, reset PIN, or change status
 
-### Delete Tenant (Super Admin Only)
+### Delete Tenant 
 
 - **DELETE** `/api/v1/users/tenants/:id`
 - **Auth**: Required (SUPER_ADMIN role)

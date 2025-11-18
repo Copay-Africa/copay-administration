@@ -33,7 +33,7 @@ import type { Tenant, TenantFilters, TenantStats } from '@/types';
 
 /**
  * Tenants Management Page
- * Manage tenants across all cooperatives (Super Admin Only)
+ * Manage tenants across all cooperatives 
  */
 
 function TenantsPage() {
@@ -151,7 +151,7 @@ function TenantsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-copay-navy">Tenant Management</h1>
-                        <p className="text-copay-gray">
+                        <p className="text-copay-gray mt-1">
                             Manage tenant accounts across all cooperatives
                         </p>
                     </div>
@@ -161,7 +161,7 @@ function TenantsPage() {
                             Export Report
                         </Button>
                         <CreateTenantDialog onTenantCreated={fetchTenantsAndStats}>
-                            <Button>
+                            <Button className="bg-copay-blue hover:bg-copay-navy text-white">
                                 <UserPlus className="h-4 w-4 mr-2" />
                                 Add Tenant
                             </Button>
@@ -171,17 +171,17 @@ function TenantsPage() {
 
                 {/* Tenant Statistics */}
                 {error ? (
-                    <Card>
+                    <Card className="border-red-200 bg-red-50">
                         <CardContent className="flex flex-col items-center justify-center py-8">
                             <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
                             <h3 className="text-lg font-medium text-copay-navy mb-2">Failed to load tenants</h3>
                             <p className="text-copay-gray mb-4">{error}</p>
-                            <Button onClick={() => window.location.reload()}>Try Again</Button>
+                            <Button onClick={() => window.location.reload()} className="bg-copay-blue hover:bg-copay-navy text-white">Try Again</Button>
                         </CardContent>
                     </Card>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Total Tenants
@@ -191,39 +191,39 @@ function TenantsPage() {
                             <CardContent>
                                 <div className="text-2xl font-bold text-copay-navy">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.total || 0)
                                     )}
                                 </div>
-                                <p className="text-xs text-copay-gray">
+                                <p className="text-xs text-copay-gray mt-1">
                                     Across all cooperatives
                                 </p>
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Active Tenants
                                 </CardTitle>
-                                <Users className="h-4 w-4 text-green-500" />
+                                <Users className="h-4 w-4 text-copay-blue" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-copay-navy">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.active || 0)
                                     )}
                                 </div>
-                                <p className="text-xs text-copay-gray">
+                                <p className="text-xs text-copay-gray mt-1">
                                     Currently active
                                 </p>
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Inactive Tenants
@@ -233,33 +233,33 @@ function TenantsPage() {
                             <CardContent>
                                 <div className="text-2xl font-bold text-copay-navy">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.inactive || 0)
                                     )}
                                 </div>
-                                <p className="text-xs text-copay-gray">
+                                <p className="text-xs text-copay-gray mt-1">
                                     Not active
                                 </p>
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     New This Month
                                 </CardTitle>
-                                <TrendingUp className="h-4 w-4 text-green-500" />
+                                <TrendingUp className="h-4 w-4 text-copay-blue" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-copay-navy">
                                     {loading ? (
-                                        <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
                                     ) : (
                                         formatNumber(stats?.recentRegistrations || 0)
                                     )}
                                 </div>
-                                <p className="text-xs text-copay-gray">
+                                <p className="text-xs text-copay-gray mt-1">
                                     Recent registrations
                                 </p>
                             </CardContent>
@@ -268,7 +268,7 @@ function TenantsPage() {
                 )}
 
                 {/* Tenants Table */}
-                <Card>
+                <Card className="border-copay-light-gray">
                     <CardHeader>
                         <CardTitle className="text-copay-navy">All Tenants</CardTitle>
                         <CardDescription>
@@ -306,16 +306,16 @@ function TenantsPage() {
                             <div className="space-y-3">
                                 {[...Array(8)].map((_, i) => (
                                     <div key={i} className="animate-pulse flex items-center space-x-4 p-4">
-                                        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                                        <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-                                        <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-                                        <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-                                        <div className="h-4 bg-gray-200 rounded w-1/6"></div>
+                                        <div className="h-4 bg-copay-light-gray rounded w-1/4"></div>
+                                        <div className="h-4 bg-copay-light-gray rounded w-1/6"></div>
+                                        <div className="h-4 bg-copay-light-gray rounded w-1/6"></div>
+                                        <div className="h-4 bg-copay-light-gray rounded w-1/6"></div>
+                                        <div className="h-4 bg-copay-light-gray rounded w-1/6"></div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="border rounded-lg">
+                            <div className="border border-copay-light-gray rounded-lg">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>

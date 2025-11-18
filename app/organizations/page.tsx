@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -28,80 +29,12 @@ import CategoryCard from '@/components/cooperative-categories/category-card';
 import { withAuth } from '@/context/auth-context';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { apiClient } from '@/lib/api-client';
-import { PREDEFINED_CATEGORIES } from '@/lib/cooperative-categories';
 import type { Organization, OrganizationFilters, CooperativeCategory } from '@/types';
 
 /**
  * Organizations Management Page
  * Displays and manages all registered cooperatives in the system
  */
-
-// Fallback data for organizations in case of API failure
-const mockOrganizations: Organization[] = [
-  {
-    id: '1',
-    name: 'Kigali Workers Cooperative',
-    code: 'KWC-2023-001',
-    description: 'A cooperative for urban workers in Kigali',
-    phone: '+250788123456',
-    email: 'info@kigaliworkers.rw',
-    address: 'KG 15 Ave, Gasabo, Kigali City, Rwanda',
-    status: 'ACTIVE',
-    memberCount: 245,
-    totalRevenue: 2450000,
-    monthlyActiveUsers: 230,
-    settings: {
-      currency: 'RWF',
-      timezone: 'Africa/Kigali',
-      paymentDueDay: 15,
-    },
-    createdAt: '2023-08-15T10:30:00Z',
-    updatedAt: '2024-01-15T14:20:00Z',
-    onboardingStatus: 'APPROVED',
-  },
-  {
-    id: '2',
-    name: 'Nyagatare Farmers Union',
-    code: 'NFU-2023-002',
-    description: 'Agricultural cooperative in Eastern Province',
-    phone: '+250788654321',
-    email: 'contact@nyafarmers.rw',
-    address: 'Nyagatare Center, Nyagatare, Eastern Province, Rwanda',
-    status: 'PENDING_APPROVAL',
-    memberCount: 180,
-    totalRevenue: 450000,
-    monthlyActiveUsers: 165,
-    settings: {
-      currency: 'RWF',
-      timezone: 'Africa/Kigali',
-      paymentDueDay: 15,
-    },
-    createdAt: '2023-12-01T09:15:00Z',
-    updatedAt: '2023-12-01T09:15:00Z',
-    onboardingStatus: 'UNDER_REVIEW',
-  },
-  {
-    id: '3',
-    name: 'Ubuzima Health Cooperative',
-    code: 'UHC-2023-003',
-    description: 'Healthcare workers cooperative',
-    phone: '+250788987654',
-    email: 'admin@ubuzima.rw',
-    address: 'KN 78 St, Kicukiro, Kigali City, Rwanda',
-    status: 'ACTIVE',
-    memberCount: 156,
-    totalRevenue: 780000,
-    monthlyActiveUsers: 145,
-    settings: {
-      currency: 'RWF',
-      timezone: 'Africa/Kigali',
-      paymentDueDay: 15,
-    },
-    createdAt: '2023-09-20T11:45:00Z',
-    updatedAt: '2024-01-10T16:30:00Z',
-    onboardingStatus: 'APPROVED',
-  },
-];
 
 function OrganizationsPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -125,8 +58,7 @@ function OrganizationsPage() {
         setOrganizations(response.data as Organization[]);
       } catch (error) {
         console.error('Failed to fetch organizations:', error);
-        // Fallback to mock data in case of error
-        setOrganizations(mockOrganizations);
+        setOrganizations([]);
       } finally {
         setLoading(false);
       }
@@ -144,9 +76,7 @@ function OrganizationsPage() {
       setCategories(list);
     } catch (err: any) {
       console.error('Failed to load categories:', err);
-      if (process.env.NODE_ENV === 'development') {
-        setCategories(PREDEFINED_CATEGORIES as CooperativeCategory[]);
-      }
+      setCategories([]);
     } finally {
       setCategoriesLoading(false);
     }
@@ -229,7 +159,7 @@ function OrganizationsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-copay-navy">Organizations</h1>
-            <p className="text-copay-gray">
+            <p className="text-copay-gray mt-1">
               Manage registered cooperatives and their subscriptions
             </p>
           </div>
@@ -240,7 +170,7 @@ function OrganizationsPage() {
             </Button>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="bg-copay-blue hover:bg-copay-navy text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Organization
                 </Button>
@@ -260,7 +190,7 @@ function OrganizationsPage() {
 
         {/* Statistics Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-copay-gray">
                 Total Organizations
@@ -271,30 +201,30 @@ function OrganizationsPage() {
               <div className="text-2xl font-bold text-copay-navy">
                 {formatNumber(organizations.length)}
               </div>
-              <p className="text-xs text-copay-gray">
+              <p className="text-xs text-copay-gray mt-1">
                 +2 from last month
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-copay-gray">
                 Active Organizations
               </CardTitle>
-              <Building2 className="h-4 w-4 text-green-500" />
+              <Building2 className="h-4 w-4 text-copay-blue" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-copay-navy">
                 {formatNumber(organizations.filter(o => o.status === 'ACTIVE').length)}
               </div>
-              <p className="text-xs text-copay-gray">
+              <p className="text-xs text-copay-gray mt-1">
                 94% of total organizations
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-copay-gray">
                 Total Members
@@ -305,13 +235,13 @@ function OrganizationsPage() {
               <div className="text-2xl font-bold text-copay-navy">
                 {formatNumber(organizations.reduce((sum, org) => sum + (org.memberCount || 0), 0))}
               </div>
-              <p className="text-xs text-copay-gray">
+              <p className="text-xs text-copay-gray mt-1">
                 Across all cooperatives
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-copay-gray">
                 Monthly Revenue
@@ -322,7 +252,7 @@ function OrganizationsPage() {
               <div className="text-2xl font-bold text-copay-navy">
                 {formatCurrency(organizations.length * 25000)}
               </div>
-              <p className="text-xs text-copay-gray">
+              <p className="text-xs text-copay-gray mt-1">
                 From subscriptions
               </p>
             </CardContent>
@@ -331,7 +261,7 @@ function OrganizationsPage() {
 
         {/* Category Management Section */}
         {showCategories && (
-          <Card>
+          <Card className="border-copay-light-gray">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -344,7 +274,7 @@ function OrganizationsPage() {
                   <CategoryDialog 
                     onSaved={handleCategorySaved}
                     trigger={
-                      <Button className="bg-copay-navy hover:bg-copay-navy/90">
+                      <Button className="bg-copay-blue hover:bg-copay-navy text-white">
                         <Plus className="h-4 w-4 mr-2" />
                         Add Category
                       </Button>
@@ -361,7 +291,7 @@ function OrganizationsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[...Array(6)].map((_, i) => (
                     <div key={i} className="animate-pulse">
-                      <div className="h-20 bg-gray-200 rounded-lg"></div>
+                      <div className="h-20 bg-copay-light-gray rounded-lg"></div>
                     </div>
                   ))}
                 </div>
@@ -379,7 +309,7 @@ function OrganizationsPage() {
               )}
               {!categoriesLoading && categories.length === 0 && (
                 <div className="text-center py-8">
-                  <Tags className="h-12 w-12 text-copay-gray mx-auto mb-4" />
+                  <Tags className="h-12 w-12 text-copay-gray mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-medium text-copay-navy mb-2">
                     No categories found
                   </h3>
@@ -389,7 +319,7 @@ function OrganizationsPage() {
                   <CategoryDialog 
                     onSaved={handleCategorySaved}
                     trigger={
-                      <Button className="bg-copay-navy hover:bg-copay-navy/90">
+                      <Button className="bg-copay-blue hover:bg-copay-navy text-white">
                         <Plus className="h-4 w-4 mr-2" />
                         Create First Category
                       </Button>
@@ -402,7 +332,7 @@ function OrganizationsPage() {
         )}
 
         {/* Filters and Search */}
-        <Card>
+        <Card className="border-copay-light-gray">
           <CardHeader>
             <CardTitle className="text-copay-navy">Organizations List</CardTitle>
             <CardDescription>
@@ -440,16 +370,16 @@ function OrganizationsPage() {
               <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="animate-pulse flex items-center space-x-4 p-4">
-                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/6"></div>
+                    <div className="h-4 bg-copay-light-gray rounded w-1/4"></div>
+                    <div className="h-4 bg-copay-light-gray rounded w-1/6"></div>
+                    <div className="h-4 bg-copay-light-gray rounded w-1/6"></div>
+                    <div className="h-4 bg-copay-light-gray rounded w-1/6"></div>
+                    <div className="h-4 bg-copay-light-gray rounded w-1/6"></div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="border rounded-lg">
+              <div className="border border-copay-light-gray rounded-lg">
                 <Table>
                   <TableHeader>
                     <TableRow>
