@@ -24,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 /**
  * Navigation items for the Super Admin dashboard
@@ -145,7 +146,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-background flex theme-transition">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -156,24 +157,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col",
+        "fixed inset-y-0 left-0 z-50 w-72 sm:w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col theme-transition",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Sidebar header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b bg-copay-navy">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-border bg-primary theme-transition">
           <div className="flex items-center space-x-3">
-            <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center">
-              <Shield className="h-5 w-5 text-copay-navy" />
+            <div className="h-8 w-8 bg-primary-foreground rounded-md flex items-center justify-center theme-transition">
+              <Shield className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">Copay</h1>
-              <p className="text-xs text-copay-light-blue">Admin Portal</p>
+              <h1 className="text-lg font-bold text-primary-foreground font-heading">Copay</h1>
+              <p className="text-xs text-primary-foreground/70 font-body">Admin Portal</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden text-white hover:bg-white/10"
+            className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 theme-transition"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -194,21 +195,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <button
                     onClick={() => setIsSubmenuOpen(!isSubmenuOpen)}
                     className={cn(
-                      "flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group w-full",
+                      "flex items-center space-x-3 px-3 py-4 sm:py-3 rounded-lg text-sm font-medium transition-all duration-200 group w-full",
                       isActive
-                        ? "bg-copay-blue text-white shadow-md"
-                        : "text-copay-gray hover:bg-gray-50 hover:text-copay-navy"
+                        ? "bg-primary/10 text-primary border-l-2 border-primary"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground theme-transition"
                     )}
                   >
                     <Icon className={cn(
                       "h-5 w-5 transition-colors",
-                      isActive ? "text-white" : "text-copay-gray group-hover:text-copay-navy"
+                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-accent-foreground"
                     )} />
                     <div className="flex-1 min-w-0 text-left">
                       <div className="font-medium truncate">{item.name}</div>
                       <div className={cn(
                         "text-xs truncate",
-                        isActive ? "text-white/80" : "text-copay-gray"
+                        isActive ? "text-primary" : "text-muted-foreground"
                       )}>
                         {item.description}
                       </div>
@@ -216,12 +217,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <ChevronDown className={cn(
                       "h-4 w-4 transition-transform duration-200",
                       isSubmenuOpen ? "rotate-180" : "",
-                      isActive ? "text-white" : "text-copay-gray"
+                      isActive ? "text-primary" : "text-muted-foreground"
                     )} />
                   </button>
                   
                   {isSubmenuOpen && (
-                    <div className="ml-6 space-y-1 border-l-2 border-copay-light-gray pl-3">
+                    <div className="ml-6 space-y-1 border-l-2 border-border pl-3">
                       {item.submenu.map((subItem) => {
                         const isSubActive = isCurrentPath(subItem.href);
                         return (
@@ -231,16 +232,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             onClick={() => setSidebarOpen(false)}
                             className={cn(
                               "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group",
-                              isSubActive
-                                ? "bg-copay-blue text-white shadow-md"
-                                : "text-copay-gray hover:bg-gray-50 hover:text-copay-navy"
+                            isSubActive
+                              ? "bg-primary/10 text-primary border-l-2 border-primary"
+                              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground theme-transition"
                             )}
                           >
                             <div className="flex-1 min-w-0">
                               <div className="font-medium truncate">{subItem.name}</div>
                               <div className={cn(
                                 "text-xs truncate",
-                                isSubActive ? "text-white/80" : "text-copay-gray"
+                                isSubActive ? "text-primary/80" : "text-muted-foreground"
                               )}>
                                 {subItem.description}
                               </div>
@@ -260,21 +261,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group",
+                  "flex items-center space-x-3 px-3 py-4 sm:py-3 rounded-lg text-sm font-medium transition-all duration-200 group",
                   isActive
-                    ? "bg-copay-blue text-white shadow-md"
-                    : "text-copay-gray hover:bg-gray-50 hover:text-copay-navy"
+                    ? "bg-primary/10 text-primary border-l-2 border-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground theme-transition"
                 )}
               >
                 <Icon className={cn(
                   "h-5 w-5 transition-colors",
-                  isActive ? "text-white" : "text-copay-gray group-hover:text-copay-navy"
+                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-accent-foreground"
                 )} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{item.name}</div>
                   <div className={cn(
                     "text-xs truncate",
-                    isActive ? "text-white/80" : "text-copay-gray"
+                    isActive ? "text-primary/80" : "text-muted-foreground"
                   )}>
                     {item.description}
                   </div>
@@ -285,40 +286,40 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
 
         {/* User menu */}
-        <div className="border-t bg-gray-50 p-3">
+        <div className="border-t border-border bg-muted/30 p-3 theme-transition">
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center space-x-3 w-full px-3 py-3 rounded-lg hover:bg-white transition-colors"
+              className="flex items-center space-x-3 w-full px-3 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors theme-transition"
             >
-              <div className="h-10 w-10 bg-copay-navy rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-sm font-bold">
+              <div className="h-10 w-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-primary-foreground text-sm font-bold">
                   {user?.firstName?.charAt(0) || 'A'}
                 </span>
               </div>
               <div className="flex-1 text-left min-w-0">
-                <div className="text-sm font-semibold text-copay-navy truncate">
+                <div className="text-sm font-semibold text-foreground truncate">
                   {user?.firstName} {user?.lastName}
                 </div>
-                <div className="text-xs text-copay-gray">Super Administrator</div>
+                <div className="text-xs text-muted-foreground">Super Administrator</div>
               </div>
               <ChevronDown className={cn(
-                "h-4 w-4 text-copay-gray transition-transform flex-shrink-0",
+                "h-4 w-4 text-muted-foreground transition-transform flex-shrink-0",
                 userMenuOpen && "rotate-180"
               )} />
             </button>
 
             {userMenuOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border rounded-lg shadow-xl py-1 z-10">
-                <div className="px-3 py-2 border-b">
-                  <div className="text-sm font-medium text-copay-navy">
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover border border-border rounded-lg py-1 z-10 theme-transition">
+                <div className="px-3 py-2 border-b border-border">
+                  <div className="text-sm font-medium text-foreground">
                     {user?.email || user?.phone}
                   </div>
-                  <div className="text-xs text-copay-gray">Online</div>
+                  <div className="text-xs text-muted-foreground">Online</div>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center space-x-3 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  className="flex items-center space-x-3 w-full px-3 py-2 text-sm text-red-600 hover:bg-destructive/10 hover:text-destructive transition-colors theme-transition"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Sign Out</span>
@@ -332,9 +333,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-h-screen lg:min-h-0">
         {/* Top header */}
-        <header className="bg-white border-b shadow-sm sticky top-0 z-30">
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center space-x-4">
+        <header className="bg-background border-b border-border sticky top-0 z-30 theme-transition">
+          <div className="flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
               <Button
                 variant="ghost"
                 size="icon"
@@ -343,19 +344,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               >
                 <Menu className="h-5 w-5" />
               </Button>
-              <div className="min-w-0">
-                <h2 className="text-xl font-bold text-copay-navy capitalize truncate">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground capitalize truncate">
                   {pathname === '/dashboard' ? 'Dashboard' : pathname.split('/')[1]}
                 </h2>
-                <p className="text-sm text-copay-gray hidden sm:block">
+                <p className="text-sm text-muted-foreground hidden sm:block">
                   Welcome back, {user?.firstName}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
               {/* Time display - hidden on small screens */}
-              <div className="text-sm text-copay-gray hidden md:block" suppressHydrationWarning>
+              <div className="text-sm text-muted-foreground hidden md:block" suppressHydrationWarning>
                 {new Date().toLocaleDateString('en-US', {
                   weekday: 'short',
                   month: 'short',
@@ -363,10 +364,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 })}
               </div>
 
+              {/* Theme Toggle */}
+              <ThemeToggle />
+
               {/* User avatar for mobile */}
               <div className="lg:hidden">
-                <div className="h-8 w-8 bg-copay-navy rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
+                <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-primary-foreground text-sm font-medium">
                     {user?.firstName?.charAt(0) || 'A'}
                   </span>
                 </div>
@@ -376,7 +380,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 bg-background overflow-y-auto theme-transition">
           {children}
         </main>
       </div>

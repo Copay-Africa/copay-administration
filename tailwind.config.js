@@ -53,11 +53,13 @@ module.exports = {
         },
         // Copay custom colors
         copay: {
-          navy: "hsl(var(--copay-navy))",
-          blue: "hsl(var(--copay-blue))",
-          "light-blue": "hsl(var(--copay-light-blue))",
-          gray: "hsl(var(--copay-gray))",
-          "light-gray": "hsl(var(--copay-light-gray))",
+          primary: "#027e6f",      // Main green color for light theme
+          "primary-dark": "#1E2329", // Dark theme background
+          green: "#027e6f",        // Light theme accent
+          "dark-green": "#2d5a55", // Dark theme green variant
+          white: "#ffffff",        // Light theme background
+          "dark-bg": "#1E2329",    // Dark theme background
+          "dark-surface": "#2d3338", // Dark theme surface/card background
         },
       },
       borderRadius: {
@@ -66,8 +68,35 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
-        mono: ["Consolas", "Monaco", "Courier New", "monospace"],
+        sans: [
+          "Inter",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "system-ui",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "Noto Sans",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji"
+        ],
+        mono: [
+          "ui-monospace",
+          "SF Mono",
+          "Monaco",
+          "Cascadia Code",
+          "Roboto Mono",
+          "Menlo",
+          "Consolas",
+          "DejaVu Sans Mono",
+          "Liberation Mono",
+          "Courier New",
+          "monospace"
+        ],
       },
       keyframes: {
         "accordion-down": {

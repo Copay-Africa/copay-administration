@@ -1,72 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  /* Improved font rendering and typography */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  html {
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-variation-settings: normal;
+  }
+
+  body {
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Optimize text for different contexts */
+  .font-numeric {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  .font-heading {
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  .font-body {
+    line-height: 1.6;
+    letter-spacing: -0.011em;
+  }
+
   :root {
-    /* Premium fintech palette - calm white surface with navy accents */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Light theme - White background with green primary (#027e6f) */
+    --background: 0 0% 100%;              /* White */
+    --foreground: 0 0% 9%;               /* Almost black text */
+    --card: 0 0% 100%;                   /* White cards */
+    --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%; /* Bold navy primary */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 172 97% 25%;              /* #027e6f - Main green */
+    --primary-foreground: 0 0% 100%;     /* White text on green */
+    --secondary: 0 0% 96%;               /* Light gray */
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;                   /* Light gray */
+    --muted-foreground: 0 0% 45%;        /* Medium gray */
+    --accent: 172 97% 25%;               /* Same as primary green */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;            /* Red for errors */
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;                  /* Light border */
+    --input: 0 0% 90%;                   /* Light input border */
+    --ring: 172 97% 25%;                 /* Green focus ring */
+    --chart-1: 172 97% 25%;              /* Green */
+    --chart-2: 142 76% 36%;              /* Darker green */
+    --chart-3: 158 64% 52%;              /* Medium green */
+    --chart-4: 120 60% 50%;              /* Standard green */
+    --chart-5: 134 61% 41%;              /* Forest green */
     --radius: 0.5rem;
     
-    /* Custom Copay colors */
-    --copay-navy: 221.2 83.2% 53.3%;
-    --copay-blue: 213 93% 68%;
-    --copay-light-blue: 213 93% 95%;
-    --copay-gray: 215.4 16.3% 46.9%;
-    --copay-light-gray: 210 40% 96%;
-    
-    /* Inter font */
-    --font-sans: var(--font-inter);
+    /* Custom Copay colors for light theme */
+    --copay-primary: 172 97% 25%;        /* #027e6f */
+    --copay-primary-light: 172 97% 35%;  /* Lighter green */
+    --copay-surface: 0 0% 100%;          /* White */
+    --copay-surface-alt: 0 0% 98%;       /* Slightly off-white */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    /* Dark theme - Greenish dark (#1E2329) background */
+    --background: 198 15% 14%;           /* #1E2329 - Dark greenish */
+    --foreground: 0 0% 95%;              /* Light text */
+    --card: 198 12% 18%;                 /* Slightly lighter than bg */
+    --card-foreground: 0 0% 95%;
+    --popover: 198 12% 18%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 172 50% 45%;              /* Muted green for dark theme */
+    --primary-foreground: 198 15% 14%;   /* Dark text on green */
+    --secondary: 198 10% 22%;            /* Dark gray */
+    --secondary-foreground: 0 0% 95%;
+    --muted: 198 10% 22%;                /* Dark gray */
+    --muted-foreground: 0 0% 65%;        /* Light gray */
+    --accent: 172 50% 45%;               /* Muted green */
+    --accent-foreground: 198 15% 14%;
+    --destructive: 0 63% 31%;            /* Dark red */
+    --destructive-foreground: 0 0% 95%;
+    --border: 198 8% 25%;                /* Dark border */
+    --input: 198 8% 25%;                 /* Dark input border */
+    --ring: 172 50% 45%;                 /* Green focus ring */
+    --chart-1: 172 50% 45%;              /* Muted green */
+    --chart-2: 142 45% 35%;              /* Darker muted green */
+    --chart-3: 158 40% 40%;              /* Medium muted green */
+    --chart-4: 120 35% 40%;              /* Standard muted green */
+    --chart-5: 134 40% 35%;              /* Forest muted green */
+
+    /* Custom Copay colors for dark theme */
+    --copay-primary: 172 50% 45%;        /* Muted green */
+    --copay-primary-light: 172 55% 50%;  /* Slightly lighter */
+    --copay-surface: 198 15% 14%;        /* #1E2329 */
+    --copay-surface-alt: 198 12% 18%;    /* Lighter surface */
   }
 }
 
@@ -83,23 +121,135 @@
 
 /* Custom utility classes for Copay branding */
 @layer utilities {
-  .text-copay-navy {
-    color: hsl(var(--copay-navy));
+  .text-copay-primary {
+    color: hsl(var(--copay-primary));
   }
   
-  .bg-copay-navy {
-    background-color: hsl(var(--copay-navy));
+  .bg-copay-primary {
+    background-color: hsl(var(--copay-primary));
   }
   
-  .text-copay-blue {
-    color: hsl(var(--copay-blue));
+  .text-copay-primary-light {
+    color: hsl(var(--copay-primary-light));
   }
   
-  .bg-copay-blue {
-    background-color: hsl(var(--copay-blue));
+  .bg-copay-primary-light {
+    background-color: hsl(var(--copay-primary-light));
   }
   
-  .bg-copay-light-blue {
-    background-color: hsl(var(--copay-light-blue));
+  .bg-copay-surface {
+    background-color: hsl(var(--copay-surface));
+  }
+  
+  .bg-copay-surface-alt {
+    background-color: hsl(var(--copay-surface-alt));
+  }
+  
+  /* Theme transition */
+  .theme-transition {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+
+  /* Mobile-specific utilities */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Better touch targets for mobile */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Mobile-friendly table scrolling */
+  .table-mobile-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .table-mobile-scroll::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .table-mobile-scroll::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 2px;
+  }
+
+  .table-mobile-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.5);
+    border-radius: 2px;
+  }
+
+  .table-mobile-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.7);
+  }
+
+  /* Text truncation utilities */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  /* Safe area insets for mobile devices */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-inset-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Typography utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .font-feature-tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  .font-feature-proportional {
+    font-variant-numeric: proportional-nums;
+    font-feature-settings: 'pnum';
+  }
+
+  /* Enhanced focus states for better accessibility */
+  .focus-enhanced {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+
+  /* Better text selection */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
+  }
+
+  ::-moz-selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
   }
 }

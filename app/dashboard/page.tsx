@@ -145,28 +145,28 @@ interface StatCardProps {
 
 function StatCard({ title, value, description, icon: Icon, trend }: StatCardProps) {
   return (
-    <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
+    <Card className="border-border hover:border-primary/50 transition-colors duration-200 theme-transition">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-copay-gray">
+        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <Icon className="h-4 w-4 text-copay-gray" />
+        <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-copay-navy">
+      <CardContent className="pb-3">
+        <div className="text-xl sm:text-2xl font-bold text-foreground font-numeric">
           {typeof value === 'number' ? formatNumber(value) : value}
         </div>
-        <p className="text-xs text-copay-gray mt-1">
+        <p className="text-xs text-copay-gray mt-1 line-clamp-1">
           {description}
         </p>
         {trend && (
           <div className={`flex items-center mt-2 text-xs ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
             {trend.isPositive ? (
-              <TrendingUp className="h-3 w-3 mr-1" />
+              <TrendingUp className="h-3 w-3 mr-1 flex-shrink-0" />
             ) : (
-              <TrendingDown className="h-3 w-3 mr-1" />
+              <TrendingDown className="h-3 w-3 mr-1 flex-shrink-0" />
             )}
-            {Math.abs(trend.value)}% from last month
+            <span className="truncate">{Math.abs(trend.value)}% from last month</span>
           </div>
         )}
       </CardContent>
@@ -308,25 +308,25 @@ function DashboardPage() {
     <DashboardLayout>
       <div className="space-y-6 max-w-7xl mx-auto">
         {/* Welcome Section */}
-        <Card className="border-0 bg-gradient-to-r from-copay-navy to-copay-blue text-white">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold">
+        <Card className="border-0 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground theme-transition">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+              <div className="text-center sm:text-left">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-heading text-balance">
                   Welcome back, {user?.firstName}!
                 </h1>
-                <p className="text-white/80 mt-1">
+                <p className="text-primary-foreground/80 mt-1 text-sm sm:text-base font-body">
                   Here&apos;s what&apos;s happening with your platform today.
                 </p>
               </div>
-              <div className="mt-4 sm:mt-0 text-right">
-                <div className="flex items-center space-x-2 justify-end">
+              <div className="text-center sm:text-right">
+                <div className="flex items-center space-x-2 justify-center sm:justify-end">
                   <div className={`h-2 w-2 rounded-full ${loading || activitiesLoading ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`}></div>
-                  <p className="text-white/80 text-sm">
+                  <p className="text-primary-foreground/80 text-sm">
                     {loading || activitiesLoading ? 'Updating...' : 'Real-time'}
                   </p>
                 </div>
-                <p className="text-xl font-semibold" suppressHydrationWarning>
+                <p className="text-lg sm:text-xl font-semibold" suppressHydrationWarning>
                   {typeof window !== 'undefined' && new Date().toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -339,7 +339,7 @@ function DashboardPage() {
         </Card>
 
         {/* Stats Cards Grid */}
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Organizations"
             value={stats.totalOrganizations}
@@ -397,14 +397,14 @@ function DashboardPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="text-center sm:text-left">
-                    <p className="text-sm text-copay-gray">Total Revenue</p>
-                    <p className="text-2xl sm:text-3xl font-bold text-copay-navy">
+                    <p className="text-sm text-muted-foreground">Total Revenue</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-foreground">
                       {formatCurrency(stats.totalRevenue)}
                     </p>
                   </div>
                   <div className="text-center sm:text-right">
-                    <p className="text-sm text-copay-gray">This Month</p>
-                    <p className="text-xl sm:text-2xl font-semibold text-copay-blue">
+                    <p className="text-sm text-muted-foreground">This Month</p>
+                    <p className="text-xl sm:text-2xl font-semibold text-primary">
                       {formatCurrency(stats.monthlyRevenue)}
                     </p>
                   </div>
@@ -412,13 +412,13 @@ function DashboardPage() {
 
                 {/* Progress bar */}
                 <div className="space-y-3">
-                  <div className="flex justify-between text-sm text-copay-gray">
+                  <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Monthly Goal: {formatCurrency(3000000)}</span>
-                    <span className="font-semibold text-copay-navy">96%</span>
+                    <span className="font-semibold text-foreground">96%</span>
                   </div>
-                  <div className="w-full bg-copay-light-gray rounded-full h-3">
+                  <div className="w-full bg-muted rounded-full h-3">
                     <div
-                      className="bg-gradient-to-r from-copay-blue to-copay-navy h-3 rounded-full transition-all duration-500"
+                      className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-500"
                       style={{ width: '96%' }}
                     ></div>
                   </div>
@@ -442,11 +442,11 @@ function DashboardPage() {
                   // Loading skeleton for activities
                   [...Array(3)].map((_, i) => (
                     <div key={i} className="flex items-start space-x-3 p-3">
-                      <div className="animate-pulse h-8 w-8 bg-copay-light-gray rounded-full flex-shrink-0"></div>
+                      <div className="animate-pulse h-8 w-8 bg-muted rounded-full flex-shrink-0"></div>
                       <div className="flex-1 space-y-2">
-                        <div className="animate-pulse h-4 bg-copay-light-gray rounded w-3/4"></div>
-                        <div className="animate-pulse h-3 bg-copay-light-gray rounded w-full"></div>
-                        <div className="animate-pulse h-3 bg-copay-light-gray rounded w-1/4"></div>
+                        <div className="animate-pulse h-4 bg-muted rounded w-3/4"></div>
+                        <div className="animate-pulse h-3 bg-muted rounded w-full"></div>
+                        <div className="animate-pulse h-3 bg-muted rounded w-1/4"></div>
                       </div>
                     </div>
                   ))
@@ -454,18 +454,18 @@ function DashboardPage() {
                   recentActivities.map((activity) => {
                     const Icon = activity.icon;
                     return (
-                      <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-copay-light-gray/50 transition-colors duration-200">
-                        <div className={`p-2 rounded-full bg-copay-light-gray ${activity.color} flex-shrink-0`}>
+                      <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-accent/50 transition-colors duration-200 theme-transition">
+                        <div className={`p-2 rounded-full bg-muted ${activity.color} flex-shrink-0`}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-copay-navy truncate">
+                          <p className="text-sm font-medium text-foreground truncate">
                             {activity.title}
                           </p>
-                          <p className="text-sm text-copay-gray line-clamp-2">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
                             {activity.description}
                           </p>
-                          <p className="text-xs text-copay-gray mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {activity.timestamp}
                           </p>
                         </div>
@@ -474,7 +474,7 @@ function DashboardPage() {
                   })
                 ) : (
                   // No activities state
-                  <div className="text-center py-6 text-copay-gray">
+                  <div className="text-center py-6 text-muted-foreground">
                     <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p className="text-sm">No recent activities found</p>
                     <p className="text-xs mt-1">Activities will appear here as they happen</p>
@@ -509,8 +509,8 @@ function DashboardPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <Users className="h-4 w-4 text-copay-blue" />
-                      <span className="text-sm text-copay-gray">Monthly Active Users</span>
+                      <Users className="h-4 w-4 text-primary" />
+                      <span className="text-sm text-muted-foreground">Monthly Active Users</span>
                     </div>
                     <span className="text-sm font-semibold text-copay-navy">
                       {formatNumber(systemHealth.monthlyActiveUsers)}
@@ -519,8 +519,8 @@ function DashboardPage() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <Building2 className="h-4 w-4 text-copay-blue" />
-                      <span className="text-sm text-copay-gray">Active Organizations</span>
+                      <Building2 className="h-4 w-4 text-primary" />
+                      <span className="text-sm text-muted-foreground">Active Organizations</span>
                     </div>
                     <span className="text-sm font-semibold text-copay-navy">
                       {formatNumber(systemHealth.activeOrganizations)}
@@ -529,8 +529,8 @@ function DashboardPage() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <CreditCard className="h-4 w-4 text-copay-blue" />
-                      <span className="text-sm text-copay-gray">Total Transactions</span>
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      <span className="text-sm text-muted-foreground">Total Transactions</span>
                     </div>
                     <span className="text-sm font-semibold text-copay-navy">
                       {formatNumber(systemHealth.totalTransactions)}
@@ -554,52 +554,52 @@ function DashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link
                   href="/requests"
-                  className="group p-4 text-left border-2 border-gray-200 rounded-xl hover:border-copay-blue hover:bg-copay-light-blue transition-all duration-200"
+                  className="group p-3 sm:p-4 text-left border-2 border-border rounded-xl hover:border-primary hover:bg-accent transition-all duration-200 theme-transition"
                 >
-                  <FileText className="h-6 w-6 text-copay-navy mb-3 group-hover:text-copay-blue" />
-                  <p className="text-sm font-semibold text-copay-navy group-hover:text-copay-blue">
+                  <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-foreground mb-2 sm:mb-3 group-hover:text-primary theme-transition" />
+                  <p className="text-sm font-semibold text-foreground group-hover:text-primary theme-transition">
                     Review Requests
                   </p>
-                  <p className="text-xs text-copay-gray mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {stats.pendingRequests} pending approval
                   </p>
                 </Link>
 
                 <Link
                   href="/organizations"
-                  className="group p-4 text-left border-2 border-gray-200 rounded-xl hover:border-copay-blue hover:bg-copay-light-blue transition-all duration-200"
+                  className="group p-3 sm:p-4 text-left border-2 border-border rounded-xl hover:border-primary hover:bg-accent transition-all duration-200 theme-transition"
                 >
-                  <Building2 className="h-6 w-6 text-copay-navy mb-3 group-hover:text-copay-blue" />
-                  <p className="text-sm font-semibold text-copay-navy group-hover:text-copay-blue">
+                  <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-foreground mb-2 sm:mb-3 group-hover:text-primary theme-transition" />
+                  <p className="text-sm font-semibold text-foreground group-hover:text-primary theme-transition">
                     Manage Organizations
                   </p>
-                  <p className="text-xs text-copay-gray mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     View and manage co-ops
                   </p>
                 </Link>
 
                 <Link
                   href="/tenants"
-                  className="group p-4 text-left border-2 border-gray-200 rounded-xl hover:border-copay-blue hover:bg-copay-light-blue transition-all duration-200"
+                  className="group p-3 sm:p-4 text-left border-2 border-border rounded-xl hover:border-primary hover:bg-accent transition-all duration-200 theme-transition"
                 >
-                  <Users className="h-6 w-6 text-copay-navy mb-3 group-hover:text-copay-blue" />
-                  <p className="text-sm font-semibold text-copay-navy group-hover:text-copay-blue">
+                  <Users className="h-5 w-5 sm:h-6 sm:w-6 text-foreground mb-2 sm:mb-3 group-hover:text-primary theme-transition" />
+                  <p className="text-sm font-semibold text-foreground group-hover:text-primary theme-transition">
                     Manage Tenants
                   </p>
-                  <p className="text-xs text-copay-gray mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Cross-cooperative access
                   </p>
                 </Link>
 
                 <Link
                   href="/payments"
-                  className="group p-4 text-left border-2 border-gray-200 rounded-xl hover:border-copay-blue hover:bg-copay-light-blue transition-all duration-200"
+                  className="group p-3 sm:p-4 text-left border-2 border-border rounded-xl hover:border-primary hover:bg-accent transition-all duration-200 theme-transition"
                 >
-                  <CreditCard className="h-6 w-6 text-copay-navy mb-3 group-hover:text-copay-blue" />
-                  <p className="text-sm font-semibold text-copay-navy group-hover:text-copay-blue">
+                  <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-foreground mb-2 sm:mb-3 group-hover:text-primary theme-transition" />
+                  <p className="text-sm font-semibold text-foreground group-hover:text-primary theme-transition">
                     Payment Analytics
                   </p>
-                  <p className="text-xs text-copay-gray mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     View payment reports
                   </p>
                 </Link>

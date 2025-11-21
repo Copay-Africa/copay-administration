@@ -9,25 +9,25 @@ import { cn } from "@/lib/utils"
  * Premium fintech styling with navy and blue accents
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-target mobile-tap-highlight",
   {
     variants: {
       variant: {
-        default: "bg-copay-navy text-white hover:bg-copay-navy/90",
+        default: "bg-copay-navy text-white hover:bg-copay-navy/90 active:bg-copay-navy/80",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:bg-destructive/80",
         outline:
-          "border border-copay-navy text-copay-navy bg-background hover:bg-copay-light-blue hover:text-copay-navy",
+          "border border-copay-navy text-copay-navy bg-background hover:bg-copay-light-blue hover:text-copay-navy active:bg-copay-light-blue/80",
         secondary:
-          "bg-copay-light-gray text-copay-navy hover:bg-copay-light-gray/80",
-        ghost: "hover:bg-copay-light-blue hover:text-copay-navy",
-        link: "text-copay-blue underline-offset-4 hover:underline",
+          "bg-copay-light-gray text-copay-navy hover:bg-copay-light-gray/80 active:bg-copay-light-gray/60",
+        ghost: "hover:bg-copay-light-blue hover:text-copay-navy active:bg-copay-light-blue/80",
+        link: "text-copay-blue underline-offset-4 hover:underline active:text-copay-blue/80",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-10 px-4 py-2 sm:h-10",
+        sm: "h-9 rounded-md px-3 sm:h-9",
+        lg: "h-12 rounded-md px-8 sm:h-11",
+        icon: "h-11 w-11 sm:h-10 sm:w-10",
       },
     },
     defaultVariants: {
