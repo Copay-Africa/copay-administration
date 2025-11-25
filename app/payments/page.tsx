@@ -172,7 +172,7 @@ function PaymentsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-1 sm:p-0"> {/* Add subtle padding on mobile */}
         {/* Page Header */}
         <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
           <div>
@@ -291,7 +291,7 @@ function PaymentsPage() {
         {analytics && !analyticsLoading && (
           <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
             {/* Payment Methods Distribution Pie Chart */}
-            <Card>
+            <Card className="border border-border shadow-sm">
               <CardHeader className="pb-2 sm:pb-6">
                 <CardTitle className="text-foreground flex items-center gap-2 text-base sm:text-lg">
                   <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
@@ -349,10 +349,10 @@ function PaymentsPage() {
             </Card>
 
             {/* Payment Status Distribution Bar Chart */}
-            <Card>
+            <Card className="border border-border shadow-sm">
               <CardHeader className="pb-2 sm:pb-6">
-                <CardTitle className="text-copay-navy flex items-center gap-2 text-base sm:text-lg">
-                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
+                <CardTitle className="text-foreground flex items-center gap-2 text-base sm:text-lg">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   Payment Status Breakdown
                 </CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
@@ -411,17 +411,17 @@ function PaymentsPage() {
 
         {/* Popular Payment Method Highlight */}
         {analytics && !analyticsLoading && analytics.mostPopularMethod && (
-          <Card className="border-orange-200 bg-orange-50">
+          <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                 <div>
-                  <h4 className="text-sm font-medium text-orange-800 mb-1">Most Popular Payment Method</h4>
-                  <p className="text-base sm:text-lg font-bold text-orange-900">
+                  <h4 className="text-sm font-medium text-primary mb-1">Most Popular Payment Method</h4>
+                  <p className="text-base sm:text-lg font-bold text-foreground">
                     {getPaymentMethodName(analytics.mostPopularMethod)}
                   </p>
-                  <p className="text-xs sm:text-sm text-orange-700">Preferred by customers</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Preferred by customers</p>
                 </div>
-                <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 self-center" />
+                <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-primary self-center" />
               </div>
             </CardContent>
           </Card>
@@ -429,10 +429,10 @@ function PaymentsPage() {
 
         {/* Revenue Analytics Section */}
         {revenueAnalytics && !revenueLoading ? (
-          <div className="space-y-6">
+          <div className="space-y-6 border-t border-border pt-6"> {/* Add top border to separate sections */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
-                <h2 className="text-lg sm:text-xl font-bold text-copay-navy">Revenue Analytics</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">Revenue Analytics</h2>
               </div>
               <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <Download className="h-4 w-4 mr-2" />
@@ -445,16 +445,16 @@ function PaymentsPage() {
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-copay-gray">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
                     Total Revenue
                   </CardTitle>
-                  <DollarSign className="h-4 w-4 text-green-500" />
+                  <DollarSign className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent className="p-3 sm:p-6">
-                  <div className="text-xl sm:text-2xl font-bold text-copay-navy">
+                  <div className="text-xl sm:text-2xl font-bold text-foreground">
                     {formatCurrency(revenueAnalytics.totalRevenue)}
                   </div>
-                  <p className="text-xs text-copay-gray">
+                  <p className="text-xs text-muted-foreground">
                     all-time revenue
                   </p>
                 </CardContent>
@@ -462,16 +462,16 @@ function PaymentsPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-copay-gray">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
                     Growth Rate
                   </CardTitle>
-                  <TrendingUp className="h-4 w-4 text-blue-500" />
+                  <TrendingUp className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent className="p-3 sm:p-6">
-                  <div className="text-xl sm:text-2xl font-bold text-copay-navy">
+                  <div className="text-xl sm:text-2xl font-bold text-foreground">
                     {revenueAnalytics.growthPercentage.toFixed(1)}%
                   </div>
-                  <p className="text-xs text-copay-gray">
+                  <p className="text-xs text-muted-foreground">
                     revenue growth
                   </p>
                 </CardContent>
@@ -479,16 +479,16 @@ function PaymentsPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-copay-gray">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
                     Avg Per User
                   </CardTitle>
-                  <DollarSign className="h-4 w-4 text-purple-500" />
+                  <DollarSign className="h-4 w-4 text-accent" />
                 </CardHeader>
                 <CardContent className="p-3 sm:p-6">
-                  <div className="text-xl sm:text-2xl font-bold text-copay-navy">
+                  <div className="text-xl sm:text-2xl font-bold text-foreground">
                     {formatCurrency(revenueAnalytics.averageRevenuePerUser)}
                   </div>
-                  <p className="text-xs text-copay-gray">
+                  <p className="text-xs text-muted-foreground">
                     per user
                   </p>
                 </CardContent>
@@ -496,16 +496,16 @@ function PaymentsPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-copay-gray">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
                     Avg Per Cooperative
                   </CardTitle>
-                  <DollarSign className="h-4 w-4 text-orange-500" />
+                  <DollarSign className="h-4 w-4 text-secondary-foreground" />
                 </CardHeader>
                 <CardContent className="p-3 sm:p-6">
-                  <div className="text-xl sm:text-2xl font-bold text-copay-navy">
+                  <div className="text-xl sm:text-2xl font-bold text-foreground">
                     {formatCurrency(revenueAnalytics.averageRevenuePerCooperative)}
                   </div>
-                  <p className="text-xs text-copay-gray">
+                  <p className="text-xs text-muted-foreground">
                     per cooperative
                   </p>
                 </CardContent>
@@ -515,10 +515,10 @@ function PaymentsPage() {
             {/* Revenue Charts */}
             <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
               {/* Revenue Trends Area Chart */}
-              <Card className="xl:col-span-2">
+              <Card className="xl:col-span-2 border border-border shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-copay-navy flex items-center gap-2 text-base sm:text-lg">
-                    <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <CardTitle className="text-foreground flex items-center gap-2 text-base sm:text-lg">
+                    <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     Revenue Trends
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">
@@ -571,10 +571,10 @@ function PaymentsPage() {
               </Card>
 
               {/* Revenue by Cooperative Pie Chart */}
-              <Card>
+              <Card className="border border-border shadow-sm">
                 <CardHeader className="pb-2 sm:pb-6">
-                  <CardTitle className="text-copay-navy flex items-center gap-2 text-base sm:text-lg">
-                    <PieChartIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <CardTitle className="text-foreground flex items-center gap-2 text-base sm:text-lg">
+                    <PieChartIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     Revenue by Cooperative
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">
@@ -629,10 +629,10 @@ function PaymentsPage() {
               </Card>
 
               {/* Revenue by Payment Method Bar Chart */}
-              <Card>
+              <Card className="border border-border shadow-sm">
                 <CardHeader className="pb-2 sm:pb-6">
-                  <CardTitle className="text-copay-navy flex items-center gap-2 text-base sm:text-lg">
-                    <BarChartIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <CardTitle className="text-foreground flex items-center gap-2 text-base sm:text-lg">
+                    <BarChartIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     Revenue by Payment Method
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">
@@ -712,9 +712,9 @@ function PaymentsPage() {
         ) : null}
 
         {/* Payments Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-copay-navy">Payment Transactions</CardTitle>
+        <Card className="border border-border">
+          <CardHeader className="border-b border-border">
+            <CardTitle className="text-foreground">Payment Transactions</CardTitle>
             <CardDescription>
               All payment transactions across the platform
             </CardDescription>
@@ -762,7 +762,7 @@ function PaymentsPage() {
                 ))}
               </div>
             ) : (
-              <div className="border rounded-lg overflow-x-auto">
+              <div className="border border-border rounded-lg table-mobile-scroll">
                 <Table className="min-w-full">
                   <TableHeader>
                     <TableRow>
@@ -786,26 +786,26 @@ function PaymentsPage() {
                         </TableCell>
                         <TableCell className="p-2 sm:p-4">
                           <div>
-                            <div className="font-medium text-copay-navy text-xs sm:text-sm">
+                            <div className="font-medium text-foreground text-xs sm:text-sm">
                               {payment.sender.firstName} {payment.sender.lastName}
                             </div>
-                            <div className="text-xs text-copay-gray">
+                            <div className="text-xs text-muted-foreground">
                               {payment.sender.phone}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell className="p-2 sm:p-4 hidden sm:table-cell">
                           <div>
-                            <div className="font-medium text-copay-navy text-xs sm:text-sm">
+                            <div className="font-medium text-foreground text-xs sm:text-sm">
                               {payment.paymentType.name}
                             </div>
-                            <div className="text-xs text-copay-gray">
+                            <div className="text-xs text-muted-foreground">
                               {payment.cooperative.name}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell className="p-2 sm:p-4">
-                          <div className="font-semibold text-copay-navy text-xs sm:text-sm">
+                          <div className="font-semibold text-foreground text-xs sm:text-sm">
                             {formatCurrency(payment.amount)}
                           </div>
                         </TableCell>
@@ -819,14 +819,14 @@ function PaymentsPage() {
                         </TableCell>
                         <TableCell className="p-2 sm:p-4 hidden md:table-cell">
                           <div className="flex items-center">
-                            <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-copay-gray mr-1 sm:mr-2" />
+                            <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mr-1 sm:mr-2" />
                             <span className="text-xs sm:text-sm">
                               {getPaymentMethodName(payment.paymentMethod)}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell className="p-2 sm:p-4 hidden lg:table-cell">
-                          <div className="flex items-center text-xs sm:text-sm text-copay-gray">
+                          <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
                             <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                             {new Date(payment.paidAt || payment.createdAt).toLocaleDateString()}
                           </div>
@@ -845,11 +845,11 @@ function PaymentsPage() {
 
                 {!loading && payments.length === 0 && (
                   <div className="text-center py-6 sm:py-8 px-4">
-                    <CreditCard className="h-8 w-8 sm:h-12 sm:w-12 text-copay-gray mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-lg font-medium text-copay-navy mb-2">
+                    <CreditCard className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">
                       No payments found
                     </h3>
-                    <p className="text-sm sm:text-base text-copay-gray px-2">
+                    <p className="text-sm sm:text-base text-muted-foreground px-2">
                       {filters.search || filters.status
                         ? 'No payments match your current filters. Try adjusting your search criteria.'
                         : 'Payment transactions will appear here once members start making payments to their cooperatives.'
