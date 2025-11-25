@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/dashboard-layout';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 import {
     BarChart3,
     TrendingUp,
@@ -18,8 +17,25 @@ import {
     FileText,
     PieChart,
     LineChart,
-    DollarSign
+    DollarSign,
+    Clock,
+    Shield
 } from 'lucide-react';
+import { 
+    BarChart, 
+    Bar, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip, 
+    Legend, 
+    ResponsiveContainer,
+    PieChart as RechartsPieChart,
+    Pie,
+    Cell,
+    LineChart as RechartsLineChart,
+    Line
+} from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -30,161 +46,41 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { apiClient } from '@/lib/api-client';
-
-// Types for analytics data
-interface DashboardStats {
-    totalUsers: number;
-    totalPayments: number;
-    totalComplaints: number;
-    totalActivities: number;
-    paymentStats: {
-        totalAmount: number;
-        completedPayments: number;
-        pendingPayments: number;
-        failedPayments: number;
-    };
-    userGrowth: {
-        current: number;
-        previous: number;
-        percentage: number;
-    };
-}
-
-interface ChartData {
-    labels: string[];
-    datasets: Array<{
-        label: string;
-        data: number[];
-        backgroundColor?: string;
-        borderColor?: string;
-    }>;
-}
+import type { AnalyticsSummary } from '@/types';
 
 interface AnalyticsFilters {
-    period: 'week' | 'month' | 'quarter' | 'year';
-    dateRange: {
-        from: string;
-        to: string;
-    };
+    period: 'last_7_days' | 'last_30_days' | 'last_90_days' | 'last_year';
+    cooperativeId?: string;
 }
 
 export default function AnalyticsPage() {
-    const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
-    const [paymentsChart, setPaymentsChart] = useState<ChartData | null>(null);
-    const [usersChart, setUsersChart] = useState<ChartData | null>(null);
-    const [complaintsChart, setComplaintsChart] = useState<ChartData | null>(null);
-    const [activitiesChart, setActivitiesChart] = useState<ChartData | null>(null);
+    const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [filters, setFilters] = useState<AnalyticsFilters>({
-        period: 'month',
-        dateRange: {
-            from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            to: new Date().toISOString().split('T')[0]
-        }
+        period: 'last_30_days'
     });
     const [refreshing, setRefreshing] = useState(false);
+    const [exportingData, setExportingData] = useState<string | null>(null);
 
-    // Fetch dashboard statistics using only documented API endpoints
-    const fetchDashboardStats = useCallback(async () => {
+    // Fetch comprehensive analytics summary
+    const fetchAnalyticsSummary = useCallback(async () => {
         try {
-            const [
-                userStatsResult,
-                complaintsStatsResult,
-                paymentsStatsResult
-            ] = await Promise.allSettled([
-                apiClient.users.getStats(),
-                apiClient.complaints.getOrganizationStats(),
-                apiClient.payments.getOrganizationStats()
-            ]);
-
-            // Process user stats (documented)
-            const userStats = userStatsResult.status === 'fulfilled'
-                ? (userStatsResult.value as any)
-                : { totalUsers: 0, activeUsers: 0, inactiveUsers: 0 };
-
-            // Process complaints stats (documented)
-            const complaintsStats = complaintsStatsResult.status === 'fulfilled'
-                ? (complaintsStatsResult.value as any)
-                : { summary: { totalComplaints: 0 } };
-
-            // Process payments stats (documented)
-            const paymentsStats = paymentsStatsResult.status === 'fulfilled'
-                ? (paymentsStatsResult.value as any)
-                : { summary: { totalPayments: 0, totalAmount: 0 }, statusBreakdown: [] };
-
-            // Build dashboard stats from documented API responses
-            const dashboardData: DashboardStats = {
-                totalUsers: userStats.totalUsers || 0,
-                totalPayments: paymentsStats.summary?.totalPayments || 0,
-                totalComplaints: complaintsStats.summary?.totalComplaints || 0,
-                totalActivities: 0, // No activities endpoint available
-                paymentStats: {
-                    totalAmount: paymentsStats.summary?.totalAmount || 0,
-                    completedPayments: paymentsStats.statusBreakdown?.find((s: any) => s.status === 'COMPLETED')?.count || 0,
-                    pendingPayments: paymentsStats.statusBreakdown?.find((s: any) => s.status === 'PENDING')?.count || 0,
-                    failedPayments: paymentsStats.statusBreakdown?.find((s: any) => s.status === 'FAILED')?.count || 0
-                },
-                userGrowth: {
-                    current: userStats.totalUsers || 0,
-                    previous: Math.max(0, (userStats.totalUsers || 0) - (userStats.recentRegistrations || 10)),
-                    percentage: userStats.recentRegistrations ?
-                        ((userStats.recentRegistrations / Math.max(1, (userStats.totalUsers || 1) - (userStats.recentRegistrations || 0))) * 100) : 0
-                }
-            };
-
-            setDashboardStats(dashboardData);
+            const summary = await apiClient.analytics.getSummary(filters.period, filters.cooperativeId);
+            setAnalyticsSummary(summary as AnalyticsSummary);
+            setError('');
         } catch (error) {
-            console.error('Failed to load dashboard stats:', error);
-            setDashboardStats({
-                totalUsers: 0,
-                totalPayments: 0,
-                totalComplaints: 0,
-                totalActivities: 0,
-                paymentStats: {
-                    totalAmount: 0,
-                    completedPayments: 0,
-                    pendingPayments: 0,
-                    failedPayments: 0
-                },
-                userGrowth: {
-                    current: 0,
-                    previous: 0,
-                    percentage: 0
-                }
-            });
+            console.error('Failed to fetch analytics summary:', error);
+            setError('Failed to load analytics data. Please try again.');
         }
-    }, []);
-
-    // Create chart data using documented endpoints only
-    const fetchChartData = useCallback(async () => {
-        try {
-            // Chart data endpoints are not available in the current API
-            // Charts will show "no data" state until proper endpoints are implemented
-            setPaymentsChart(null);
-            setUsersChart(null);
-            setComplaintsChart(null);
-            setActivitiesChart(null);
-        } catch (err) {
-            console.error('Failed to load chart data:', err);
-            // Set null charts to show "no data" state
-            setPaymentsChart(null);
-            setUsersChart(null);
-            setComplaintsChart(null);
-            setActivitiesChart(null);
-        }
-    }, []);
+    }, [filters]);
 
     // Initial data loading
     useEffect(() => {
         const loadAnalyticsData = async () => {
             setLoading(true);
             try {
-                await Promise.all([
-                    fetchDashboardStats(),
-                    fetchChartData()
-                ]);
-                setError('');
+                await fetchAnalyticsSummary();
             } catch (err) {
                 console.error('Failed to load analytics data:', err);
                 setError('Failed to load analytics data');
@@ -194,17 +90,13 @@ export default function AnalyticsPage() {
         };
 
         loadAnalyticsData();
-    }, [fetchDashboardStats, fetchChartData]);
+    }, [fetchAnalyticsSummary]);
 
     // Handle refresh
     const handleRefresh = async () => {
         setRefreshing(true);
         try {
-            await Promise.all([
-                fetchDashboardStats(),
-                fetchChartData()
-            ]);
-            setError('');
+            await fetchAnalyticsSummary();
         } catch (err) {
             console.error('Failed to refresh analytics data:', err);
             setError('Failed to refresh analytics data');
@@ -213,7 +105,29 @@ export default function AnalyticsPage() {
         }
     };
 
-    // Import formatCurrency from utils for consistent RWF formatting
+    // Handle data export
+    const handleExport = async (type: 'payments' | 'users' | 'revenue') => {
+        setExportingData(type);
+        try {
+            const csvData = await apiClient.analytics.exportData(type, filters.period, filters.cooperativeId);
+            
+            // Create download link
+            const blob = new Blob([csvData], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${type}-analytics-${filters.period}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error(`Failed to export ${type} data:`, error);
+            alert(`Failed to export ${type} data. Please try again.`);
+        } finally {
+            setExportingData(null);
+        }
+    };
 
     // Format percentage
     const formatPercentage = (value: number) => {
@@ -222,12 +136,14 @@ export default function AnalyticsPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-copay-navy mx-auto"></div>
-                    <p className="mt-2 text-sm text-gray-600">Loading analytics...</p>
+            <DashboardLayout>
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-copay-navy mx-auto"></div>
+                        <p className="mt-2 text-sm text-gray-600">Loading analytics...</p>
+                    </div>
                 </div>
-            </div>
+            </DashboardLayout>
         );
     }
 
@@ -235,7 +151,7 @@ export default function AnalyticsPage() {
         <DashboardLayout>
             <div className="space-y-6 max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-copay-navy flex items-center gap-2">
                             <BarChart3 className="w-8 h-8 text-copay-blue" />
@@ -243,29 +159,24 @@ export default function AnalyticsPage() {
                         </h1>
                         <p className="text-copay-gray mt-1">Comprehensive system insights and performance metrics</p>
                     </div>
-                    <div className="flex space-x-3">
-                        <Select value={filters.period} onValueChange={(value: 'week' | 'month' | 'quarter' | 'year') =>
+                    <div className="flex flex-wrap gap-3">
+                        <Select value={filters.period} onValueChange={(value: 'last_7_days' | 'last_30_days' | 'last_90_days' | 'last_year') =>
                             setFilters(prev => ({ ...prev, period: value }))
                         }>
-                            <SelectTrigger className="w-[130px]">
+                            <SelectTrigger className="w-[140px]">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="week">Last Week</SelectItem>
-                                <SelectItem value="month">Last Month</SelectItem>
-                                <SelectItem value="quarter">Last Quarter</SelectItem>
-                                <SelectItem value="year">Last Year</SelectItem>
+                                <SelectItem value="last_7_days">Last 7 Days</SelectItem>
+                                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                <SelectItem value="last_90_days">Last 90 Days</SelectItem>
+                                <SelectItem value="last_year">Last Year</SelectItem>
                             </SelectContent>
                         </Select>
 
                         <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
                             <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                             Refresh
-                        </Button>
-
-                        <Button variant="outline" size="sm">
-                            <Download className="w-4 h-4 mr-2" />
-                            Export Report
                         </Button>
                     </div>
                 </div>
@@ -282,8 +193,8 @@ export default function AnalyticsPage() {
                     </div>
                 )}
 
-                {/* Key Metrics */}
-                {dashboardStats && (
+                {/* Key Metrics Overview */}
+                {analyticsSummary && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -291,20 +202,18 @@ export default function AnalyticsPage() {
                                 <Users className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{dashboardStats.totalUsers.toLocaleString()}</div>
-                                {dashboardStats.userGrowth && (
-                                    <p className="text-xs text-muted-foreground flex items-center mt-1">
-                                        {dashboardStats.userGrowth.percentage >= 0 ? (
-                                            <TrendingUp className="w-3 h-3 mr-1 text-green-500" />
-                                        ) : (
-                                            <TrendingDown className="w-3 h-3 mr-1 text-red-500" />
-                                        )}
-                                        <span className={dashboardStats.userGrowth.percentage >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                            {formatPercentage(dashboardStats.userGrowth.percentage)}
-                                        </span>
-                                        <span className="ml-1">from last period</span>
-                                    </p>
-                                )}
+                                <div className="text-2xl font-bold">{formatNumber(analyticsSummary.dashboard.totalUsers)}</div>
+                                <p className="text-xs text-muted-foreground flex items-center mt-1">
+                                    {analyticsSummary.dashboard.growthPercentage.users >= 0 ? (
+                                        <TrendingUp className="w-3 h-3 mr-1 text-green-500" />
+                                    ) : (
+                                        <TrendingDown className="w-3 h-3 mr-1 text-red-500" />
+                                    )}
+                                    <span className={analyticsSummary.dashboard.growthPercentage.users >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                        {formatPercentage(analyticsSummary.dashboard.growthPercentage.users)}
+                                    </span>
+                                    <span className="ml-1">growth</span>
+                                </p>
                             </CardContent>
                         </Card>
 
@@ -315,23 +224,31 @@ export default function AnalyticsPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">
-                                    {formatCurrency(dashboardStats.paymentStats?.totalAmount || 0)}
+                                    {formatCurrency(analyticsSummary.revenue.totalRevenue)}
                                 </div>
-                                <p className="text-xs text-muted-foreground">
-                                    {dashboardStats.paymentStats?.completedPayments || 0} completed payments
+                                <p className="text-xs text-muted-foreground flex items-center mt-1">
+                                    {analyticsSummary.revenue.growthPercentage >= 0 ? (
+                                        <TrendingUp className="w-3 h-3 mr-1 text-green-500" />
+                                    ) : (
+                                        <TrendingDown className="w-3 h-3 mr-1 text-red-500" />
+                                    )}
+                                    <span className={analyticsSummary.revenue.growthPercentage >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                        {formatPercentage(analyticsSummary.revenue.growthPercentage)}
+                                    </span>
+                                    <span className="ml-1">growth</span>
                                 </p>
                             </CardContent>
                         </Card>
 
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Complaints</CardTitle>
-                                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-sm font-medium">Total Payments</CardTitle>
+                                <CreditCard className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{dashboardStats.totalComplaints.toLocaleString()}</div>
+                                <div className="text-2xl font-bold">{formatNumber(analyticsSummary.dashboard.totalPayments)}</div>
                                 <p className="text-xs text-muted-foreground">
-                                    Issue tracking & resolution
+                                    {analyticsSummary.payments.successRate.toFixed(1)}% success rate
                                 </p>
                             </CardContent>
                         </Card>
@@ -342,218 +259,304 @@ export default function AnalyticsPage() {
                                 <Activity className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{dashboardStats.totalActivities.toLocaleString()}</div>
+                                <div className="text-2xl font-bold">{formatNumber(analyticsSummary.activity.totalActivities)}</div>
                                 <p className="text-xs text-muted-foreground">
-                                    Total system events
+                                    {analyticsSummary.activity.securityEvents} security events
                                 </p>
                             </CardContent>
                         </Card>
                     </div>
                 )}
 
-                {/* Payment Statistics */}
-                {dashboardStats?.paymentStats && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center">
-                                <CreditCard className="w-5 h-5 mr-2" />
-                                Payment Analytics
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="text-center p-4 bg-green-50 rounded-lg">
-                                    <div className="text-2xl font-bold text-green-600">
-                                        {dashboardStats.paymentStats.completedPayments}
+                {/* Detailed Analytics Sections */}
+                {analyticsSummary && (
+                    <>
+                        {/* Payment Analytics */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <CreditCard className="w-5 h-5 mr-2" />
+                                        Payment Analytics
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                                            <div className="text-xl font-bold text-blue-600">
+                                                {formatNumber(analyticsSummary.payments.totalVolume)}
+                                            </div>
+                                            <p className="text-sm text-blue-700 font-medium">Total Volume</p>
+                                        </div>
+                                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                                            <div className="text-xl font-bold text-green-600">
+                                                {formatCurrency(analyticsSummary.payments.averageAmount)}
+                                            </div>
+                                            <p className="text-sm text-green-700 font-medium">Avg Amount</p>
+                                        </div>
                                     </div>
-                                    <p className="text-sm text-green-700 font-medium">Completed</p>
-                                    <p className="text-xs text-green-600">Successfully processed</p>
-                                </div>
+                                    
+                                    {/* Payment Status Distribution */}
+                                    <div className="space-y-2">
+                                        <h4 className="font-medium text-sm">Payment Status</h4>
+                                        {analyticsSummary.payments.statusDistribution.map((status, index) => (
+                                            <div key={index} className="flex justify-between items-center">
+                                                <span className="text-sm capitalize">{status.status.toLowerCase()}</span>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-sm font-medium">{status.count}</span>
+                                                    <span className="text-xs text-gray-500">({status.percentage.toFixed(1)}%)</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
 
-                                <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                                    <div className="text-2xl font-bold text-yellow-600">
-                                        {dashboardStats.paymentStats.pendingPayments}
+                            {/* User Analytics */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <Users className="w-5 h-5 mr-2" />
+                                        User Analytics
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="text-center p-3 bg-purple-50 rounded-lg">
+                                            <div className="text-xl font-bold text-purple-600">
+                                                {formatNumber(analyticsSummary.users.activeUsers)}
+                                            </div>
+                                            <p className="text-sm text-purple-700 font-medium">Active Users</p>
+                                        </div>
+                                        <div className="text-center p-3 bg-indigo-50 rounded-lg">
+                                            <div className="text-xl font-bold text-indigo-600">
+                                                {formatNumber(analyticsSummary.users.newRegistrations)}
+                                            </div>
+                                            <p className="text-sm text-indigo-700 font-medium">New Registrations</p>
+                                        </div>
                                     </div>
-                                    <p className="text-sm text-yellow-700 font-medium">Pending</p>
-                                    <p className="text-xs text-yellow-600">Awaiting processing</p>
-                                </div>
-
-                                <div className="text-center p-4 bg-red-50 rounded-lg">
-                                    <div className="text-2xl font-bold text-red-600">
-                                        {dashboardStats.paymentStats.failedPayments}
+                                    
+                                    {/* User Role Distribution */}
+                                    <div className="space-y-2">
+                                        <h4 className="font-medium text-sm">User Roles</h4>
+                                        {analyticsSummary.users.roleDistribution.map((role, index) => (
+                                            <div key={index} className="flex justify-between items-center">
+                                                <span className="text-sm">{role.role.replace('_', ' ')}</span>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-sm font-medium">{role.count}</span>
+                                                    <span className="text-xs text-gray-500">({role.percentage.toFixed(1)}%)</span>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <p className="text-sm text-red-700 font-medium">Failed</p>
-                                    <p className="text-xs text-red-600">Requires attention</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Charts Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Payments Trend */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center">
-                                <LineChart className="w-5 h-5 mr-2" />
-                                Payment Trends
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {paymentsChart ? (
-                                <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                                    <div className="text-center">
-                                        <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                                        <p className="text-sm text-gray-600">Payment trend visualization</p>
-                                        <p className="text-xs text-gray-500">Chart implementation needed</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="h-64 flex items-center justify-center">
-                                    <div className="text-center text-gray-500">
-                                        <BarChart3 className="w-8 h-8 mx-auto mb-2" />
-                                        <p className="text-sm">No payment data available</p>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* User Growth */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center">
-                                <TrendingUp className="w-5 h-5 mr-2" />
-                                User Growth
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {usersChart ? (
-                                <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                                    <div className="text-center">
-                                        <Users className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                                        <p className="text-sm text-gray-600">User growth visualization</p>
-                                        <p className="text-xs text-gray-500">Chart implementation needed</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="h-64 flex items-center justify-center">
-                                    <div className="text-center text-gray-500">
-                                        <Users className="w-8 h-8 mx-auto mb-2" />
-                                        <p className="text-sm">No user data available</p>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Complaints Analysis */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center">
-                                <PieChart className="w-5 h-5 mr-2" />
-                                Complaints Breakdown
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {complaintsChart ? (
-                                <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                                    <div className="text-center">
-                                        <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                                        <p className="text-sm text-gray-600">Complaints breakdown chart</p>
-                                        <p className="text-xs text-gray-500">Chart implementation needed</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="h-64 flex items-center justify-center">
-                                    <div className="text-center text-gray-500">
-                                        <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
-                                        <p className="text-sm">No complaint data available</p>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* System Activities */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center">
-                                <Activity className="w-5 h-5 mr-2" />
-                                System Activities
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {activitiesChart ? (
-                                <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                                    <div className="text-center">
-                                        <Activity className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                                        <p className="text-sm text-gray-600">Activity timeline chart</p>
-                                        <p className="text-xs text-gray-500">Chart implementation needed</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="h-64 flex items-center justify-center">
-                                    <div className="text-center text-gray-500">
-                                        <Activity className="w-8 h-8 mx-auto mb-2" />
-                                        <p className="text-sm">No activity data available</p>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Quick Actions */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Quick Reports</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <Button
-                                variant="outline"
-                                className="h-auto p-4 flex flex-col items-center space-y-2"
-                                onClick={() => window.open('/analytics/reports/payments', '_blank')}
-                            >
-                                <FileText className="w-6 h-6 text-blue-600" />
-                                <span className="text-sm font-medium">Payment Report</span>
-                                <span className="text-xs text-gray-500">Generate payment analytics</span>
-                            </Button>
-
-                            <Button
-                                variant="outline"
-                                className="h-auto p-4 flex flex-col items-center space-y-2"
-                                onClick={() => window.open('/analytics/reports/users', '_blank')}
-                            >
-                                <Users className="w-6 h-6 text-green-600" />
-                                <span className="text-sm font-medium">User Report</span>
-                                <span className="text-xs text-gray-500">User activity summary</span>
-                            </Button>
-
-                            <Button
-                                variant="outline"
-                                className="h-auto p-4 flex flex-col items-center space-y-2"
-                                onClick={() => window.open('/analytics/reports/complaints', '_blank')}
-                            >
-                                <AlertTriangle className="w-6 h-6 text-red-600" />
-                                <span className="text-sm font-medium">Complaints Report</span>
-                                <span className="text-xs text-gray-500">Issue tracking summary</span>
-                            </Button>
-
-                            <Button
-                                variant="outline"
-                                className="h-auto p-4 flex flex-col items-center space-y-2"
-                                onClick={() => window.open('/analytics/reports/organizations', '_blank')}
-                            >
-                                <Building2 className="w-6 h-6 text-purple-600" />
-                                <span className="text-sm font-medium">Organization Report</span>
-                                <span className="text-xs text-gray-500">Cooperative analytics</span>
-                            </Button>
+                                </CardContent>
+                            </Card>
                         </div>
-                    </CardContent>
-                </Card>
+
+                        {/* Revenue Analytics */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <DollarSign className="w-5 h-5 mr-2" />
+                                    Revenue Analytics
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                                        <div className="text-2xl font-bold text-green-600">
+                                            {formatCurrency(analyticsSummary.revenue.totalRevenue)}
+                                        </div>
+                                        <p className="text-sm text-green-700 font-medium">Total Revenue</p>
+                                    </div>
+                                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                                        <div className="text-2xl font-bold text-blue-600">
+                                            {formatCurrency(analyticsSummary.revenue.averageRevenuePerUser)}
+                                        </div>
+                                        <p className="text-sm text-blue-700 font-medium">Avg Revenue/User</p>
+                                    </div>
+                                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                                        <div className="text-2xl font-bold text-purple-600">
+                                            {formatCurrency(analyticsSummary.revenue.averageRevenuePerCooperative)}
+                                        </div>
+                                        <p className="text-sm text-purple-700 font-medium">Avg Revenue/Coop</p>
+                                    </div>
+                                </div>
+
+                                {/* Revenue by Cooperative */}
+                                <div className="space-y-3">
+                                    <h4 className="font-medium">Revenue by Cooperative</h4>
+                                    {analyticsSummary.revenue.revenueByCooperative.slice(0, 5).map((coop, index) => (
+                                        <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                                            <div>
+                                                <p className="font-medium text-sm">{coop.cooperativeName}</p>
+                                                <p className="text-xs text-gray-500">{coop.percentage.toFixed(1)}% of total</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-bold text-sm">{formatCurrency(coop.revenue)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Activity Analytics */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <Activity className="w-5 h-5 mr-2" />
+                                        System Activity
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="text-center p-3 bg-orange-50 rounded-lg">
+                                            <div className="text-xl font-bold text-orange-600">
+                                                {formatNumber(analyticsSummary.activity.totalActivities)}
+                                            </div>
+                                            <p className="text-sm text-orange-700 font-medium">Total Activities</p>
+                                        </div>
+                                        <div className="text-center p-3 bg-red-50 rounded-lg">
+                                            <div className="text-xl font-bold text-red-600">
+                                                {formatNumber(analyticsSummary.activity.securityEvents)}
+                                            </div>
+                                            <p className="text-sm text-red-700 font-medium">Security Events</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Top Activity Types Professional Chart */}
+                                    <div className="space-y-4">
+                                        <h4 className="font-medium text-sm">Activity Distribution</h4>
+                                        <div style={{ width: '100%', height: 250 }}>
+                                            <ResponsiveContainer>
+                                                <RechartsPieChart>
+                                                    <Pie
+                                                        data={analyticsSummary.activity.topActivityTypes.slice(0, 6).map(activity => ({
+                                                            name: activity.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()),
+                                                            value: activity.count,
+                                                            percentage: activity.percentage
+                                                        }))}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        labelLine={false}
+                                                        label={(entry: any) => `${entry.name} (${entry.percentage.toFixed(1)}%)`}
+                                                        outerRadius={80}
+                                                        fill="#8884d8"
+                                                        dataKey="value"
+                                                    >
+                                                        {analyticsSummary.activity.topActivityTypes.slice(0, 6).map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={[
+                                                                '#3B82F6', // Blue
+                                                                '#10B981', // Green
+                                                                '#8B5CF6', // Purple
+                                                                '#F59E0B', // Orange
+                                                                '#EF4444', // Red
+                                                                '#6B7280'  // Gray
+                                                            ][index % 6]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip formatter={(value: any, name: any) => [`${formatNumber(Number(value))} activities`, name]} />
+                                                </RechartsPieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <Clock className="w-5 h-5 mr-2" />
+                                        Peak Activity Hours
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div style={{ width: '100%', height: 300 }}>
+                                        <ResponsiveContainer>
+                                            <BarChart data={analyticsSummary.activity.peakHours
+                                                .sort((a, b) => a.hour - b.hour)
+                                                .map(hour => ({
+                                                    hour: `${hour.hour}:00`,
+                                                    count: hour.count,
+                                                    timeLabel: `${hour.hour}:00 - ${hour.hour + 1}:00`
+                                                }))
+                                            }>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="hour" />
+                                                <YAxis />
+                                                <Tooltip 
+                                                    formatter={(value: any, name: any) => [`${formatNumber(Number(value))} activities`, 'Activity Count']}
+                                                    labelFormatter={(label: any) => `Time: ${label} - ${parseInt(label.split(':')[0]) + 1}:00`}
+                                                />
+                                                <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Export Options */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <Download className="w-5 h-5 mr-2" />
+                                    Export Analytics Data
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <Button
+                                        variant="outline"
+                                        className="h-auto p-4 flex flex-col items-center space-y-2"
+                                        onClick={() => handleExport('payments')}
+                                        disabled={exportingData === 'payments'}
+                                    >
+                                        {exportingData === 'payments' ? (
+                                            <RefreshCw className="w-6 h-6 text-blue-600 animate-spin" />
+                                        ) : (
+                                            <CreditCard className="w-6 h-6 text-blue-600" />
+                                        )}
+                                        <span className="text-sm font-medium">Payment Analytics</span>
+                                        <span className="text-xs text-gray-500">Export payment data as CSV</span>
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        className="h-auto p-4 flex flex-col items-center space-y-2"
+                                        onClick={() => handleExport('users')}
+                                        disabled={exportingData === 'users'}
+                                    >
+                                        {exportingData === 'users' ? (
+                                            <RefreshCw className="w-6 h-6 text-green-600 animate-spin" />
+                                        ) : (
+                                            <Users className="w-6 h-6 text-green-600" />
+                                        )}
+                                        <span className="text-sm font-medium">User Analytics</span>
+                                        <span className="text-xs text-gray-500">Export user data as CSV</span>
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        className="h-auto p-4 flex flex-col items-center space-y-2"
+                                        onClick={() => handleExport('revenue')}
+                                        disabled={exportingData === 'revenue'}
+                                    >
+                                        {exportingData === 'revenue' ? (
+                                            <RefreshCw className="w-6 h-6 text-purple-600 animate-spin" />
+                                        ) : (
+                                            <DollarSign className="w-6 h-6 text-purple-600" />
+                                        )}
+                                        <span className="text-sm font-medium">Revenue Analytics</span>
+                                        <span className="text-xs text-gray-500">Export revenue data as CSV</span>
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
             </div>
         </DashboardLayout>
     );

@@ -312,7 +312,7 @@ export default function AuditTrailPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-red-600">
-                                {activities.filter(a => a.isSecurityEvent).length}
+                                {(activities || []).filter(a => a.isSecurityEvent).length}
                             </div>
                             <p className="text-xs text-muted-foreground">Critical security activities</p>
                         </CardContent>
@@ -325,7 +325,7 @@ export default function AuditTrailPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-blue-600">
-                                {activities.filter(a => a.entityType === 'USER').length}
+                                {(activities || []).filter(a => a.entityType === 'USER').length}
                             </div>
                             <p className="text-xs text-muted-foreground">User-related activities</p>
                         </CardContent>
@@ -338,7 +338,7 @@ export default function AuditTrailPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-green-600">
-                                {activities.filter(a => a.entityType === 'PAYMENT').length}
+                                {(activities || []).filter(a => a.entityType === 'PAYMENT').length}
                             </div>
                             <p className="text-xs text-muted-foreground">Payment transactions</p>
                         </CardContent>

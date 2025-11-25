@@ -65,11 +65,61 @@ function TenantsPage() {
                 : (tenantsResponse.data || tenantsResponse);
 
             setTenants(tenantData as Tenant[]);
-            setStats(statsResponse as TenantStats);
+            
+            // Calculate stats from actual tenant data if API stats are invalid
+            const apiStats = statsResponse as TenantStats;
+            const calculatedStats = {
+                total: tenantData.length,
+                active: tenantData.filter((t: any) => t.status === 'ACTIVE').length,
+                inactive: tenantData.filter((t: any) => t.status === 'INACTIVE').length,
+                byCooperative: [],
+                recentRegistrations: 0
+            };
+            
+            // Use API stats if available and valid, otherwise use calculated stats
+            const finalStats: TenantStats = {
+                total: apiStats?.total ?? calculatedStats.total,
+                active: apiStats?.active ?? calculatedStats.active,
+                inactive: apiStats?.inactive ?? calculatedStats.inactive,
+                byCooperative: apiStats?.byCooperative ?? calculatedStats.byCooperative,
+                recentRegistrations: apiStats?.recentRegistrations ?? calculatedStats.recentRegistrations
+            };
+            
+            setStats(finalStats);
+            console.log('Tenant stats:', { api: apiStats, calculated: calculatedStats, final: finalStats });
         } catch (err) {
             console.error('Failed to fetch tenants:', err);
             const errorMessage = (err as Error)?.message || 'Failed to load tenants. Please try again.';
             setError(errorMessage);
+            
+            // Try to at least get tenants data even if stats fail
+            try {
+                const tenantsResponse = await apiClient.tenants.getAll(filters);
+                const tenantData = Array.isArray(tenantsResponse)
+                    ? tenantsResponse
+                    : (tenantsResponse.data || tenantsResponse);
+                
+                setTenants(tenantData as Tenant[]);
+                
+                // Calculate stats from tenant data
+                setStats({
+                    total: tenantData.length,
+                    active: tenantData.filter((t: any) => t.status === 'ACTIVE').length,
+                    inactive: tenantData.filter((t: any) => t.status === 'INACTIVE').length,
+                    byCooperative: [],
+                    recentRegistrations: 0
+                });
+            } catch {
+                // Complete fallback if even tenants can't be fetched
+                setTenants([]);
+                setStats({
+                    total: 0,
+                    active: 0,
+                    inactive: 0,
+                    byCooperative: [],
+                    recentRegistrations: 0
+                });
+            }
         } finally {
             setLoading(false);
         }
@@ -420,7 +470,7 @@ function TenantsPage() {
                                     </TableBody>
                                 </Table>
 
-                                {!loading && tenants.length === 0 && (
+                                {!loading && (tenants?.length || 0) === 0 && (
                                     <div className="text-center py-8">
                                         <Users className="h-12 w-12 text-copay-gray mx-auto mb-4" />
                                         <h3 className="text-lg font-medium text-copay-navy mb-2">

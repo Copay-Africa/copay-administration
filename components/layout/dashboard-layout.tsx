@@ -16,8 +16,6 @@ import {
   LogOut,
   Shield,
   ChevronDown,
-  Activity,
-  Bell,
   MessageSquare,
   BarChart3
 } from 'lucide-react';
@@ -43,12 +41,6 @@ const navigationItems = [
     description: 'Reports & data insights'
   },
   {
-    name: 'Activities',
-    href: '/activities',
-    icon: Activity,
-    description: 'Audit logs & security'
-  },
-  {
     name: 'Audit Trail',
     href: '/audit-trail',
     icon: Shield,
@@ -59,12 +51,6 @@ const navigationItems = [
     href: '/complaints',
     icon: MessageSquare,
     description: 'Issue management & resolution'
-  },
-  {
-    name: 'Notifications',
-    href: '/notifications',
-    icon: Bell,
-    description: 'Message center & delivery tracking'
   },
   {
     name: 'Organizations',

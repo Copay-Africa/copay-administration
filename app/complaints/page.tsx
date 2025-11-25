@@ -119,30 +119,59 @@ export default function ComplaintsPage() {
             // Use documented endpoints according to API documentation:
             // ✅ GET /complaints/organization - for organization complaints list
             // ✅ GET /complaints/organization/stats - for organization complaint statistics
-            const [complaintsResponse, statsResponse] = await Promise.all([
+            const [complaintsResponse, statsResponse] = await Promise.allSettled([
                 apiClient.complaints.getOrganizationComplaints(filters),
                 apiClient.complaints.getOrganizationStats()
             ]);
 
-            console.log('Complaints response:', complaintsResponse);
-            console.log('Stats response:', statsResponse);
+            // Handle complaints response
+            const finalComplaintsResponse = complaintsResponse.status === 'fulfilled' 
+                ? complaintsResponse.value 
+                : null;
+            
+            // Handle stats response
+            const finalStatsResponse = statsResponse.status === 'fulfilled' 
+                ? statsResponse.value 
+                : null;
+
+            console.log('Complaints response:', finalComplaintsResponse);
+            console.log('Stats response:', finalStatsResponse);
 
             // Handle paginated response format for complaints
-            if (complaintsResponse && typeof complaintsResponse === 'object' && 'data' in complaintsResponse) {
-                setComplaints(complaintsResponse.data as Complaint[]);
-            } else if (Array.isArray(complaintsResponse)) {
-                setComplaints(complaintsResponse as Complaint[]);
+            if (finalComplaintsResponse && typeof finalComplaintsResponse === 'object' && 'data' in finalComplaintsResponse) {
+                setComplaints(finalComplaintsResponse.data as Complaint[]);
+            } else if (Array.isArray(finalComplaintsResponse)) {
+                setComplaints(finalComplaintsResponse as Complaint[]);
             } else {
-                console.error('Unexpected complaints response format:', complaintsResponse);
+                console.error('Unexpected complaints response format:', finalComplaintsResponse);
                 setComplaints([]);
             }
 
-            // Handle stats response
-            if (statsResponse && typeof statsResponse === 'object') {
-                setStats(statsResponse as ComplaintStats);
+            // Handle stats response with null safety
+            if (finalStatsResponse && typeof finalStatsResponse === 'object' && finalStatsResponse !== null) {
+                setStats(finalStatsResponse as ComplaintStats);
             } else {
-                console.error('Unexpected stats response format:', statsResponse);
-                setStats(null);
+                console.error('Unexpected stats response format:', finalStatsResponse);
+                if (statsResponse.status === 'rejected') {
+                    console.error('Stats API error:', statsResponse.reason);
+                }
+                // Set default stats to prevent UI breaking
+                setStats({
+                    total: complaints.length || 0,
+                    byStatus: [
+                        { status: 'OPEN', count: 0 },
+                        { status: 'IN_PROGRESS', count: 0 },
+                        { status: 'RESOLVED', count: 0 },
+                        { status: 'CLOSED', count: 0 }
+                    ],
+                    byPriority: [
+                        { priority: 'URGENT', count: 0 },
+                        { priority: 'HIGH', count: 0 },
+                        { priority: 'MEDIUM', count: 0 },
+                        { priority: 'LOW', count: 0 }
+                    ],
+                    recentComplaints: complaints.slice(0, 5) // Add recent complaints from the main list
+                });
             }
         } catch (err) {
             console.error('Failed to fetch complaints:', err);
@@ -182,30 +211,6 @@ export default function ComplaintsPage() {
                 errorMessage = 'Complaints API endpoint not found. The server may not be configured correctly.';
             } else if (isNetworkError) {
                 errorMessage = `Cannot connect to the API server (${process.env.NEXT_PUBLIC_API_URL}). Please check if the server is running.`;
-                
-                // In development, provide empty data as fallback
-                if (process.env.NODE_ENV === 'development') {
-                    console.warn('Using empty data due to API connection failure');
-                    setComplaints([]);
-                    setStats({
-                        total: 0,
-                        byStatus: [
-                            { status: 'OPEN', count: 0 },
-                            { status: 'IN_PROGRESS', count: 0 },
-                            { status: 'RESOLVED', count: 0 },
-                            { status: 'CLOSED', count: 0 }
-                        ],
-                        byPriority: [
-                            { priority: 'LOW', count: 0 },
-                            { priority: 'MEDIUM', count: 0 },
-                            { priority: 'HIGH', count: 0 },
-                            { priority: 'URGENT', count: 0 }
-                        ],
-                        recentComplaints: []
-                    });
-                    setError(''); // Clear error when using empty fallback data
-                    return;
-                }
             } else {
                 errorMessage = error.message || 'Failed to load complaints data';
             }
@@ -340,7 +345,7 @@ export default function ComplaintsPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-red-600">
-                                    {stats.byStatus?.find((s) => s.status === 'OPEN')?.count || 0}
+                                    {(stats?.byStatus || []).find((s) => s.status === 'OPEN')?.count || 0}
                                 </div>
                             </CardContent>
                         </Card>
@@ -352,7 +357,7 @@ export default function ComplaintsPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-yellow-600">
-                                    {stats.byStatus?.find((s) => s.status === 'IN_PROGRESS')?.count || 0}
+                                    {(stats?.byStatus || []).find((s) => s.status === 'IN_PROGRESS')?.count || 0}
                                 </div>
                             </CardContent>
                         </Card>
@@ -364,7 +369,7 @@ export default function ComplaintsPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-green-600">
-                                    {stats.byStatus?.find((s) => s.status === 'RESOLVED')?.count || 0}
+                                    {(stats?.byStatus || []).find((s) => s.status === 'RESOLVED')?.count || 0}
                                 </div>
                             </CardContent>
                         </Card>
@@ -512,7 +517,7 @@ export default function ComplaintsPage() {
                                                         <Select onValueChange={(status) =>
                                                             handleStatusUpdate(complaint.id, status as ComplaintStatus)
                                                         }>
-                                                            <SelectTrigger asChild>
+                                                            <SelectTrigger className="w-auto h-auto p-0">
                                                                 <Button variant="outline" size="sm">
                                                                     <Edit className="w-4 h-4" />
                                                                 </Button>

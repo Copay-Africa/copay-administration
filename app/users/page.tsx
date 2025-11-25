@@ -18,6 +18,21 @@ import {
     User as UserIcon
 } from 'lucide-react';
 import Link from 'next/link';
+import { 
+    BarChart, 
+    Bar, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip, 
+    Legend, 
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+    LineChart,
+    Line
+} from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +44,7 @@ import { CreateUserDialog } from '@/components/users/create-user-dialog';
 import { withAuth } from '@/context/auth-context';
 import { formatNumber } from '@/lib/utils';
 import { apiClient } from '@/lib/api-client';
-import type { User, UserFilters, UserStats, UserRole } from '@/types';
+import type { User, UserFilters, UserStats, UserRole, UserAnalytics } from '@/types';
 
 /**
  * Users Management Page
@@ -39,6 +54,7 @@ import type { User, UserFilters, UserStats, UserRole } from '@/types';
 function UsersPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [stats, setStats] = useState<UserStats | null>(null);
+    const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [filters, setFilters] = useState<UserFilters>({
@@ -48,15 +64,16 @@ function UsersPage() {
         role: undefined,
     });
 
-    // Function to refresh users and stats
-    const fetchUsersAndStats = useCallback(async () => {
+    // Function to refresh users, stats and analytics
+    const fetchUsersAndAnalytics = useCallback(async () => {
         setLoading(true);
         setError('');
         try {
-            // Fetch users and stats in parallel
-            const [usersResponse, statsResponse] = await Promise.all([
+            // Fetch users, stats and analytics in parallel
+            const [usersResponse, statsResponse, analyticsResponse] = await Promise.all([
                 apiClient.users.getAll(filters),
-                apiClient.users.getStats()
+                apiClient.users.getStats(),
+                apiClient.users.getAnalytics()
             ]);
 
             // Handle response format - could be array directly or wrapped in data property
@@ -66,18 +83,28 @@ function UsersPage() {
 
             setUsers(userData as User[]);
             setStats(statsResponse as UserStats);
+            setAnalytics(analyticsResponse as UserAnalytics);
         } catch (err) {
             console.error('Failed to fetch users:', err);
             const errorMessage = (err as Error)?.message || 'Failed to load users. Please try again.';
             setError(errorMessage);
+            // Set empty fallback stats on error
+            setUsers([]);
+            setStats({
+                total: 0,
+                byRole: [],
+                byStatus: [],
+                recentUsers: []
+            });
+            setAnalytics(null);
         } finally {
             setLoading(false);
         }
     }, [filters]);
 
     useEffect(() => {
-        fetchUsersAndStats();
-    }, [filters, fetchUsersAndStats]);
+        fetchUsersAndAnalytics();
+    }, [filters, fetchUsersAndAnalytics]);
 
     const getRoleBadge = (role: UserRole) => {
         switch (role) {
@@ -184,7 +211,7 @@ function UsersPage() {
                             <Download className="h-4 w-4 mr-2" />
                             Export Report
                         </Button>
-                        <CreateUserDialog onUserCreated={fetchUsersAndStats}>
+                        <CreateUserDialog onUserCreated={fetchUsersAndAnalytics}>
                             <Button className="bg-copay-blue hover:bg-copay-navy text-white">
                                 <UserPlus className="h-4 w-4 mr-2" />
                                 Add User
@@ -193,7 +220,7 @@ function UsersPage() {
                     </div>
                 </div>
 
-                {/* User Statistics */}
+                {/* User Analytics */}
                 {error ? (
                     <Card className="border-red-200 bg-red-50">
                         <CardContent className="flex flex-col items-center justify-center py-8">
@@ -203,80 +230,216 @@ function UsersPage() {
                             <Button onClick={() => window.location.reload()} className="bg-copay-blue hover:bg-copay-navy text-white">Try Again</Button>
                         </CardContent>
                     </Card>
-                ) : (
+                ) : analytics && !loading ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
                                     Total Users
                                 </CardTitle>
-                                <UsersIcon className="h-4 w-4 text-copay-gray" />
+                                <UsersIcon className="h-4 w-4 text-blue-500" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-copay-navy">
-                                    {loading ? (
-                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
-                                    ) : (
-                                        formatNumber(stats?.total || 0)
-                                    )}
+                                    {formatNumber(analytics.totalUsers)}
                                 </div>
+                                <p className="text-xs text-copay-gray">
+                                    registered users
+                                </p>
                             </CardContent>
                         </Card>
 
                         <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
-                                    Super Admins
+                                    Active Users
                                 </CardTitle>
-                                <Shield className="h-4 w-4 text-purple-500" />
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-green-600">
+                                    {formatNumber(analytics.activeUsers)}
+                                </div>
+                                <p className="text-xs text-copay-gray">
+                                    currently active
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-copay-gray">
+                                    New Registrations
+                                </CardTitle>
+                                <UserPlus className="h-4 w-4 text-purple-500" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-purple-600">
-                                    {loading ? (
-                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
-                                    ) : (
-                                        formatNumber(stats?.byRole?.find(r => r.role === 'SUPER_ADMIN')?.count || 0)
-                                    )}
+                                    {formatNumber(analytics.newRegistrations)}
                                 </div>
+                                <p className="text-xs text-copay-gray">
+                                    recent signups
+                                </p>
                             </CardContent>
                         </Card>
 
                         <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-copay-gray">
-                                    Org Admins
+                                    Growth Rate
                                 </CardTitle>
-                                <Building2 className="h-4 w-4 text-copay-blue" />
+                                <UserPlus className="h-4 w-4 text-orange-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-copay-blue">
-                                    {loading ? (
-                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
-                                    ) : (
-                                        formatNumber(stats?.byRole?.find(r => r.role === 'ORGANIZATION_ADMIN')?.count || 0)
-                                    )}
+                                <div className="text-2xl font-bold text-orange-600">
+                                    {analytics.growthRate.toFixed(1)}%
+                                </div>
+                                <p className="text-xs text-copay-gray">
+                                    growth rate
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                ) : (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        {[...Array(4)].map((_, i) => (
+                            <Card key={i} className="border-copay-light-gray">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <div className="h-4 bg-copay-light-gray rounded animate-pulse w-20"></div>
+                                    <div className="h-4 w-4 bg-copay-light-gray rounded animate-pulse"></div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16 mb-2"></div>
+                                    <div className="h-3 bg-copay-light-gray rounded animate-pulse w-12"></div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+
+                {/* Professional Analytics Charts */}
+                {analytics && !loading && (
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        {/* Role Distribution Pie Chart */}
+                        <Card className="border-copay-light-gray">
+                            <CardHeader>
+                                <CardTitle className="text-copay-navy">Role Distribution</CardTitle>
+                                <CardDescription>
+                                    User distribution by roles
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div style={{ width: '100%', height: 300 }}>
+                                    <ResponsiveContainer>
+                                        <PieChart>
+                                            <Pie
+                                                data={analytics.roleDistribution.map(item => ({
+                                                    name: item.role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()),
+                                                    value: item.count,
+                                                    percentage: item.percentage
+                                                }))}
+                                                cx="50%"
+                                                cy="50%"
+                                                labelLine={false}
+                                                label={(entry: any) => `${entry.name} (${entry.percentage.toFixed(1)}%)`}
+                                                outerRadius={80}
+                                                fill="#8884d8"
+                                                dataKey="value"
+                                            >
+                                                {analytics.roleDistribution.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={[
+                                                        '#8B5CF6', // Purple for Super Admin
+                                                        '#3B82F6', // Blue for Org Admin  
+                                                        '#1E40AF'  // Navy for Tenant
+                                                    ][index % 3]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip formatter={(value: any, name: any) => [`${formatNumber(Number(value))} users`, name]} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="border-copay-light-gray hover:shadow-md transition-shadow duration-200">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium text-copay-gray">
-                                    Tenants
-                                </CardTitle>
-                                <UserIcon className="h-4 w-4 text-copay-navy" />
+                        {/* Status Distribution Bar Chart */}
+                        <Card className="border-copay-light-gray">
+                            <CardHeader>
+                                <CardTitle className="text-copay-navy">Status Distribution</CardTitle>
+                                <CardDescription>
+                                    User account status breakdown
+                                </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-copay-navy">
-                                    {loading ? (
-                                        <div className="h-8 bg-copay-light-gray rounded animate-pulse w-16"></div>
-                                    ) : (
-                                        formatNumber(stats?.byRole?.find(r => r.role === 'TENANT')?.count || 0)
-                                    )}
+                                <div style={{ width: '100%', height: 300 }}>
+                                    <ResponsiveContainer>
+                                        <BarChart data={analytics.statusDistribution.map(item => ({
+                                            status: item.status,
+                                            count: item.count,
+                                            percentage: item.percentage
+                                        }))}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis dataKey="status" />
+                                            <YAxis />
+                                            <Tooltip formatter={(value: any, name: any) => [`${formatNumber(Number(value))} users`, 'Users']} />
+                                            <Bar dataKey="count" fill="#10B981" radius={[4, 4, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
+                )}
+
+                {/* Activity Trends Line Chart */}
+                {analytics && analytics.activityTrends.length > 0 && !loading && (
+                    <Card className="border-copay-light-gray">
+                        <CardHeader>
+                            <CardTitle className="text-copay-navy">Activity Trends</CardTitle>
+                            <CardDescription>
+                                User activity and registration trends over time
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div style={{ width: '100%', height: 400 }}>
+                                <ResponsiveContainer>
+                                    <LineChart data={analytics.activityTrends.map(trend => ({
+                                        date: new Date(trend.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                                        activeUsers: trend.activeUsers,
+                                        newUsers: trend.newUsers,
+                                        fullDate: trend.date
+                                    }))}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="date" />
+                                        <YAxis />
+                                        <Tooltip 
+                                            formatter={(value: any, name: any) => [
+                                                `${formatNumber(Number(value))} users`, 
+                                                name === 'activeUsers' ? 'Active Users' : 'New Users'
+                                            ]}
+                                            labelFormatter={(label: any) => `Date: ${label}`}
+                                        />
+                                        <Legend />
+                                        <Line 
+                                            type="monotone" 
+                                            dataKey="activeUsers" 
+                                            stroke="#3B82F6" 
+                                            strokeWidth={2}
+                                            dot={{ r: 4 }}
+                                            name="Active Users"
+                                        />
+                                        <Line 
+                                            type="monotone" 
+                                            dataKey="newUsers" 
+                                            stroke="#10B981" 
+                                            strokeWidth={2}
+                                            dot={{ r: 4 }}
+                                            name="New Registrations"
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* Filters */}
@@ -329,7 +492,7 @@ function UsersPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-copay-navy">
                             <UsersIcon className="h-5 w-5" />
-                            Users ({formatNumber(users.length)})
+                            Users ({formatNumber(users?.length || 0)})
                         </CardTitle>
                         <CardDescription>
                             Manage user accounts and permissions
@@ -342,7 +505,7 @@ function UsersPage() {
                                     <div key={i} className="h-16 bg-copay-light-gray rounded animate-pulse"></div>
                                 ))}
                             </div>
-                        ) : users.length === 0 ? (
+                        ) : (users?.length || 0) === 0 ? (
                             <div className="text-center py-8">
                                 <UsersIcon className="h-12 w-12 text-copay-gray mx-auto mb-4 opacity-50" />
                                 <h3 className="text-lg font-medium text-copay-navy mb-2">No users found</h3>

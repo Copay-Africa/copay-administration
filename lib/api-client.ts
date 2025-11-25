@@ -649,11 +649,23 @@ class ApiClient {
    * Generic GET request
    */
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
-    const response: AxiosResponse<ApiResponse<T>> = await this.instance.get(
+    const response: AxiosResponse<any> = await this.instance.get(
       endpoint,
       { params }
     );
-    return response.data.data;
+    
+    // Handle different API response formats
+    if (response.data && typeof response.data === 'object') {
+      // Standard format: { data: T }
+      if ('data' in response.data && response.data.data !== undefined) {
+        return response.data.data;
+      }
+      // Direct data format: T
+      return response.data;
+    }
+    
+    // Fallback
+    return response.data;
   }
 
   /**
@@ -786,6 +798,10 @@ class ApiClient {
       this.get(`/payments/organization/${id}`),
     getOrganizationStats: (filters?: any) =>
       this.get("/payments/organization/stats", filters),
+    getAnalytics: (filters?: { fromDate?: string; toDate?: string }) =>
+      this.get("/analytics/payments", filters),
+    getRevenueAnalytics: (filters?: { period?: string; cooperativeId?: string }) =>
+      this.get("/analytics/revenue", filters),
   };
 
   /**
@@ -1015,6 +1031,12 @@ class ApiClient {
       this.get("/users/stats", cooperativeId ? { cooperativeId } : {}),
 
     /**
+     * Get user analytics
+     */
+    getAnalytics: (filters?: { fromDate?: string; toDate?: string }) =>
+      this.get("/analytics/users", filters),
+
+    /**
      * Delete user
      */
     remove: (id: string) => this.delete(`/users/${id}`),
@@ -1209,6 +1231,43 @@ class ApiClient {
     getStats: () => this.get("/dashboard/stats"),
     getChartData: (type: string, period?: string) =>
       this.get(`/dashboard/charts/${type}`, { period }),
+  };
+
+  /**
+   * Analytics API
+   */
+  analytics = {
+    getDashboard: async (period?: 'last_7_days' | 'last_30_days' | 'last_90_days' | 'last_year' | 'custom') => {
+      // Analytics endpoint returns data directly, not wrapped in data property
+      const response: AxiosResponse = await this.instance.get(
+        "/analytics/dashboard", 
+        period ? { params: { period } } : {}
+      );
+      return response.data; // Return data directly, not response.data.data
+    },
+    getSummary: async (period?: 'last_7_days' | 'last_30_days' | 'last_90_days' | 'last_year' | 'custom', cooperativeId?: string) => {
+      // Analytics summary endpoint returns data directly
+      const params: any = {};
+      if (period) params.period = period;
+      if (cooperativeId) params.cooperativeId = cooperativeId;
+      
+      const response: AxiosResponse = await this.instance.get(
+        "/analytics/summary",
+        Object.keys(params).length > 0 ? { params } : {}
+      );
+      return response.data;
+    },
+    exportData: async (type: 'payments' | 'users' | 'revenue', period?: 'last_7_days' | 'last_30_days' | 'last_90_days' | 'last_year' | 'custom', cooperativeId?: string) => {
+      const params: any = { type };
+      if (period) params.period = period;
+      if (cooperativeId) params.cooperativeId = cooperativeId;
+      
+      const response: AxiosResponse = await this.instance.get(
+        "/analytics/export",
+        { params, responseType: 'blob' }
+      );
+      return response.data;
+    },
   };
 
   /**

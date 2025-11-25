@@ -14,7 +14,13 @@ export default function CategoryStatsPage() {
             setLoading(true);
             try {
                 const res = await apiClient.cooperativeCategories.getStats();
-                setStats(res as CooperativeCategoryStats);
+                setStats(res as CooperativeCategoryStats || {
+                    totalCategories: 0,
+                    activeCategories: 0,
+                    totalCooperatives: 0,
+                    categoriesWithCooperatives: 0,
+                    topCategories: []
+                });
             } catch (err: any) {
                 console.error('Failed to load category stats', err);
                 setError(err?.message || 'Failed to load stats');
@@ -54,7 +60,7 @@ export default function CategoryStatsPage() {
             <div>
                 <h3 className="text-lg font-medium">Top Categories</h3>
                 <ul className="mt-2 space-y-2">
-                    {stats?.topCategories?.map((t) => (
+                    {(stats?.topCategories || []).map((t) => (
                         <li key={t.id} className="flex items-center justify-between p-3 bg-background rounded">
                             <div>{t.name}</div>
                             <div className="text-sm text-muted-foreground">{t.cooperativeCount}</div>

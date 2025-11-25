@@ -65,7 +65,12 @@ function AccountRequestsPage() {
         : (requestsResponse.data || requestsResponse);
         
       setRequests(requestData as AccountRequest[]);
-      setStats(statsResponse as AccountRequestStats);
+      setStats(statsResponse as AccountRequestStats || {
+        total: 0,
+        byStatus: [],
+        byCooperative: [],
+        recentRequests: 0
+      });
     } catch (err) {
       console.error('Failed to fetch account requests:', err);
       const errorMessage = (err as Error)?.message || 'Failed to load account requests. Please try again.';
@@ -213,7 +218,7 @@ function AccountRequestsPage() {
                   {loading ? (
                     <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
                   ) : (
-                    formatNumber(stats?.byStatus?.find(s => s.status === 'PENDING')?.count || 0)
+                    formatNumber((stats?.byStatus || []).find(s => s.status === 'PENDING')?.count || 0)
                   )}
                 </div>
               </CardContent>
@@ -231,7 +236,7 @@ function AccountRequestsPage() {
                   {loading ? (
                     <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
                   ) : (
-                    formatNumber(stats?.byStatus?.find(s => s.status === 'APPROVED')?.count || 0)
+                    formatNumber((stats?.byStatus || []).find(s => s.status === 'APPROVED')?.count || 0)
                   )}
                 </div>
               </CardContent>
@@ -249,7 +254,7 @@ function AccountRequestsPage() {
                   {loading ? (
                     <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
                   ) : (
-                    formatNumber(stats?.byStatus?.find(s => s.status === 'REJECTED')?.count || 0)
+                    formatNumber((stats?.byStatus || []).find(s => s.status === 'REJECTED')?.count || 0)
                   )}
                 </div>
               </CardContent>

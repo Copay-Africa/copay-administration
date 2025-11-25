@@ -199,7 +199,7 @@ function OrganizationsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-copay-navy">
-                {formatNumber(organizations.length)}
+                {formatNumber((organizations || []).length)}
               </div>
               <p className="text-xs text-copay-gray mt-1">
                 +2 from last month
@@ -216,7 +216,7 @@ function OrganizationsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-copay-navy">
-                {formatNumber(organizations.filter(o => o.status === 'ACTIVE').length)}
+                {formatNumber((organizations || []).filter(org => org.status === 'ACTIVE').length)}
               </div>
               <p className="text-xs text-copay-gray mt-1">
                 94% of total organizations
@@ -233,7 +233,7 @@ function OrganizationsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-copay-navy">
-                {formatNumber(organizations.reduce((sum, org) => sum + (org.memberCount || 0), 0))}
+                {formatNumber((organizations || []).reduce((sum, org) => sum + (org.memberCount || 0), 0))}
               </div>
               <p className="text-xs text-copay-gray mt-1">
                 Across all cooperatives
@@ -250,7 +250,7 @@ function OrganizationsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-copay-navy">
-                {formatCurrency(organizations.length * 25000)}
+                {formatCurrency((organizations || []).length * 25000)}
               </div>
               <p className="text-xs text-copay-gray mt-1">
                 From subscriptions

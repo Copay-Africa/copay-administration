@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { apiClient } from "@/lib/api-client";
-import { PREDEFINED_CATEGORIES } from "@/lib/cooperative-categories";
 import type { CooperativeCategory } from "@/types";
 import CategoryCard from "@/components/cooperative-categories/category-card";
 import CategoryDialog from "@/components/cooperative-categories/category-dialog";
@@ -27,10 +26,7 @@ export default function CooperativeCategoriesPage() {
         } catch (err: any) {
             console.error('Failed to load categories:', err);
             setError(err?.message || 'Failed to load categories');
-            if (process.env.NODE_ENV === 'development') {
-                setCategories(PREDEFINED_CATEGORIES as CooperativeCategory[]);
-                setError('');
-            }
+            setCategories([]); // Always show empty list on error
         } finally {
             setLoading(false);
         }

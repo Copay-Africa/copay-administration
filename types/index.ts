@@ -427,6 +427,119 @@ export interface DashboardStats {
   monthlyActiveUsers: number;
 }
 
+export interface AnalyticsDashboardStats {
+  totalUsers: number;
+  totalCooperatives: number;
+  totalPayments: number;
+  totalPaymentAmount: number;
+  pendingAccountRequests: number;
+  activeReminders: number;
+  openComplaints: number;
+  growthPercentage: {
+    users: number;
+    payments: number;
+    revenue: number;
+  };
+}
+
+export interface PaymentAnalytics {
+  totalVolume: number;
+  totalAmount: number;
+  averageAmount: number;
+  successRate: number;
+  mostPopularMethod: string;
+  trends: Array<{
+    date: string;
+    volume: number;
+    amount: number;
+  }>;
+  statusDistribution: Array<{
+    status: string;
+    count: number;
+    amount?: number;
+    percentage: number;
+  }>;
+  methodDistribution: Array<{
+    method: string;
+    count: number;
+    amount?: number;
+    percentage: number;
+  }>;
+}
+
+export interface UserAnalytics {
+  totalUsers: number;
+  activeUsers: number;
+  newRegistrations: number;
+  growthRate: number;
+  activityTrends: Array<{
+    date: string;
+    activeUsers: number;
+    newUsers: number;
+  }>;
+  roleDistribution: Array<{
+    role: string;
+    count: number;
+    percentage: number;
+  }>;
+  statusDistribution: Array<{
+    status: string;
+    count: number;
+    percentage: number;
+  }>;
+}
+
+export interface ActivityAnalytics {
+  totalActivities: number;
+  topActivityTypes: Array<{
+    type: string;
+    count: number;
+    percentage: number;
+  }>;
+  securityEvents: number;
+  failedLogins: number;
+  activityTrends: Array<{
+    date: string;
+    totalActivities: number;
+    securityEvents: number;
+  }>;
+  peakHours: Array<{
+    hour: number;
+    count: number;
+  }>;
+}
+
+export interface RevenueAnalytics {
+  totalRevenue: number;
+  growthPercentage: number;
+  averageRevenuePerUser: number;
+  averageRevenuePerCooperative: number;
+  revenueTrends: Array<{
+    date: string;
+    revenue: number;
+    transactionCount: number;
+  }>;
+  revenueByCooperative: Array<{
+    cooperativeId: string;
+    cooperativeName: string;
+    revenue: number;
+    percentage: number;
+  }>;
+  revenueByMethod: Array<{
+    method: string;
+    revenue: number;
+    percentage: number;
+  }>;
+}
+
+export interface AnalyticsSummary {
+  dashboard: AnalyticsDashboardStats;
+  payments: PaymentAnalytics;
+  users: UserAnalytics;
+  activity: ActivityAnalytics;
+  revenue: RevenueAnalytics;
+}
+
 export interface ChartData {
   labels: string[];
   datasets: {

@@ -18,13 +18,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import { withAuth, useAuth } from '@/context/auth-context';
 import { formatCurrency, formatNumber } from '@/lib/utils';
-import type { DashboardStats } from '@/types';
+import type { DashboardStats, AnalyticsDashboardStats } from '@/types';
 
 /**
  * Main Dashboard Overview Page
  * Displays key metrics, charts, and recent activities for super admins
  * 
- * IMPORTANT: Uses ONLY real-time data from API endpoints - no mock data
+ * IMPORTANT: Uses the dedicated Analytics API (/analytics/dashboard) for comprehensive dashboard statistics
+ * Provides real-time data including growth metrics, total counts, and business intelligence
  * All currency values are formatted in RWF (Rwandan Franc)
  */
 
@@ -199,24 +200,61 @@ function DashboardPage() {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // Fetch dashboard stats
-        const statsData = await apiClient.dashboard.getStats();
-        setStats(statsData as DashboardStats);
+        // Use the new analytics dashboard API for comprehensive stats
+        console.log('Fetching dashboard analytics...');
+        
+        const analyticsResponse = await apiClient.analytics.getDashboard('last_30_days');
+        console.log('Raw analytics response:', analyticsResponse);
+        
+        // Analytics API returns data directly
+        const analyticsData = analyticsResponse as AnalyticsDashboardStats;
+        
+        if (!analyticsData || typeof analyticsData !== 'object' || !('totalUsers' in analyticsData)) {
+          throw new Error('Analytics data is null, undefined, or invalid format');
+        }
+        
+        console.log('Processed analytics data:', analyticsData);
 
-        // Update system health with real data
+        // Map analytics data to dashboard stats format with fallbacks
+        const finalStats: DashboardStats = {
+          totalOrganizations: analyticsData?.totalCooperatives || 0,
+          activeOrganizations: analyticsData?.totalCooperatives || 0, // All cooperatives assumed active
+          pendingRequests: analyticsData?.pendingAccountRequests || 0,
+          totalRevenue: analyticsData?.totalPaymentAmount || 0,
+          monthlyRevenue: analyticsData?.totalPaymentAmount || 0, // Analytics provides monthly data
+          totalTenants: analyticsData?.totalUsers || 0,
+          activeTenants: analyticsData?.totalUsers || 0, // All users assumed active
+          totalUsers: analyticsData?.totalUsers || 0,
+          monthlyActiveUsers: analyticsData?.totalUsers || 0,
+        };
+        
+        setStats(finalStats);
+        console.log('Dashboard stats set:', finalStats);
+
+        // Update system health with analytics data
         setSystemHealth({
-          monthlyActiveUsers: (statsData as DashboardStats).monthlyActiveUsers || 0,
-          activeOrganizations: (statsData as DashboardStats).activeOrganizations || 0,
-          totalTransactions: 8450, // This could come from a payments API endpoint
+          monthlyActiveUsers: analyticsData?.totalUsers || 0,
+          activeOrganizations: analyticsData?.totalCooperatives || 0,
+          totalTransactions: analyticsData?.totalPayments || 0,
           systemStatus: 'operational'
         });
 
         setLoading(false);
       } catch (error) {
-        console.error('Failed to fetch dashboard stats:', error);
-        // Use empty/default stats instead of mock data
-        console.error('Dashboard stats API failed, using default values');
-        setStats({
+        console.error('Failed to fetch dashboard data:', error);
+        console.error('Error details:', {
+          message: (error as Error)?.message,
+          stack: (error as Error)?.stack,
+          response: (error as any)?.response
+        });
+        
+        // In development mode, show empty data - no mock data
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('API failed - showing empty data (no mock data)');
+        }
+        
+        // Always use empty/default stats - no mock data ever
+        const defaultStats: DashboardStats = {
           totalOrganizations: 0,
           activeOrganizations: 0,
           pendingRequests: 0,
@@ -226,6 +264,14 @@ function DashboardPage() {
           activeTenants: 0,
           totalUsers: 0,
           monthlyActiveUsers: 0,
+        };
+        
+        setStats(defaultStats);
+        setSystemHealth({
+          monthlyActiveUsers: 0,
+          activeOrganizations: 0,
+          totalTransactions: 0,
+          systemStatus: 'down'
         });
         setLoading(false);
       }
@@ -346,7 +392,7 @@ function DashboardPage() {
             description={`${stats.activeOrganizations} active cooperatives`}
             icon={Building2}
             trend={{
-              value: Math.round((stats.activeOrganizations / stats.totalOrganizations) * 100),
+              value: (stats?.totalOrganizations || 0) > 0 ? Math.round(((stats?.activeOrganizations || 0) / (stats?.totalOrganizations || 1)) * 100) : 0,
               isPositive: true
             }}
           />
@@ -356,8 +402,8 @@ function DashboardPage() {
             description="Current month earnings"
             icon={DollarSign}
             trend={{
-              value: Math.round((stats.monthlyRevenue / (stats.totalRevenue / 12)) * 100 - 100),
-              isPositive: stats.monthlyRevenue > (stats.totalRevenue / 12)
+              value: (stats?.totalRevenue || 0) > 0 ? Math.round(((stats?.monthlyRevenue || 0) / Math.max((stats?.totalRevenue || 1) / 12, 1)) * 100 - 100) : 0,
+              isPositive: (stats?.totalRevenue || 0) > 0 ? (stats?.monthlyRevenue || 0) > ((stats?.totalRevenue || 1) / 12) : (stats?.monthlyRevenue || 0) > 0
             }}
           />
           <StatCard
@@ -366,7 +412,7 @@ function DashboardPage() {
             description={`${stats.totalTenants} total tenants`}
             icon={Users}
             trend={{
-              value: Math.round((stats.activeTenants / stats.totalTenants) * 100),
+              value: (stats?.totalTenants || 0) > 0 ? Math.round(((stats?.activeTenants || 0) / (stats?.totalTenants || 1)) * 100) : 0,
               isPositive: true
             }}
           />
@@ -376,8 +422,8 @@ function DashboardPage() {
             description="Awaiting approval"
             icon={FileText}
             trend={{
-              value: stats.pendingRequests > 10 ? Math.round(stats.pendingRequests / 10 * 100) : stats.pendingRequests,
-              isPositive: stats.pendingRequests <= 5
+              value: (stats?.pendingRequests || 0) > 10 ? Math.round(((stats?.pendingRequests || 0) / 10) * 100) : (stats?.pendingRequests || 0),
+              isPositive: (stats?.pendingRequests || 0) <= 5
             }}
           />
         </div>
@@ -399,13 +445,13 @@ function DashboardPage() {
                   <div className="text-center sm:text-left">
                     <p className="text-sm text-muted-foreground">Total Revenue</p>
                     <p className="text-2xl sm:text-3xl font-bold text-foreground">
-                      {formatCurrency(stats.totalRevenue)}
+                      {formatCurrency(stats?.totalRevenue || 0)}
                     </p>
                   </div>
                   <div className="text-center sm:text-right">
                     <p className="text-sm text-muted-foreground">This Month</p>
                     <p className="text-xl sm:text-2xl font-semibold text-primary">
-                      {formatCurrency(stats.monthlyRevenue)}
+                      {formatCurrency(stats?.monthlyRevenue || 0)}
                     </p>
                   </div>
                 </div>
@@ -561,7 +607,7 @@ function DashboardPage() {
                     Review Requests
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {stats.pendingRequests} pending approval
+                    {stats?.pendingRequests || 0} pending approval
                   </p>
                 </Link>
 

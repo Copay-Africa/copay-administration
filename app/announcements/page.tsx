@@ -73,7 +73,13 @@ function AnnouncementsPage() {
                 : (announcementsResponse.data || announcementsResponse);
 
             setAnnouncements(announcementData as Announcement[]);
-            setStats(statsResponse as AnnouncementStats);
+            setStats(statsResponse as AnnouncementStats || {
+                totalAnnouncements: 0,
+                sentToday: 0,
+                scheduledCount: 0,
+                draftCount: 0,
+                recentAnnouncements: []
+            });
         } catch (err) {
             console.error('Failed to fetch announcements:', err);
             const errorMessage = (err as Error)?.message || 'Failed to load announcements. Please try again.';
@@ -207,7 +213,7 @@ function AnnouncementsPage() {
         try {
             // Create CSV content
             const csvHeaders = ['Title', 'Status', 'Priority', 'Target Type', 'Recipients', 'Scheduled For', 'Sent At', 'Created By', 'Created At'];
-            const csvRows = announcements.map(announcement => [
+            const csvRows = (announcements || []).map(announcement => [
                 announcement.title,
                 announcement.status,
                 announcement.priority,
@@ -215,7 +221,7 @@ function AnnouncementsPage() {
                 announcement.estimatedRecipientsCount || 'N/A',
                 announcement.scheduledFor ? new Date(announcement.scheduledFor).toLocaleString() : 'N/A',
                 announcement.sentAt ? new Date(announcement.sentAt).toLocaleString() : 'N/A',
-                announcement.createdBy.name,
+                announcement.createdBy?.name || 'Unknown User',
                 new Date(announcement.createdAt).toLocaleString()
             ]);
 
@@ -472,7 +478,7 @@ function AnnouncementsPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {announcements.map((announcement) => (
+                                        {(announcements || []).map((announcement) => (
                                             <TableRow key={announcement.id}>
                                                 <TableCell>
                                                     <div className="space-y-1">
@@ -518,8 +524,12 @@ function AnnouncementsPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="space-y-1">
-                                                        <p className="font-medium text-sm">{announcement.createdBy.name}</p>
-                                                        <p className="text-xs text-copay-gray">{announcement.createdBy.role}</p>
+                                                        <p className="font-medium text-sm">
+                                                            {announcement.createdBy?.name || 'Unknown User'}
+                                                        </p>
+                                                        <p className="text-xs text-copay-gray">
+                                                            {announcement.createdBy?.role || 'Unknown Role'}
+                                                        </p>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
