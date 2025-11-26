@@ -214,12 +214,6 @@ function CreateAnnouncementPage() {
                 {/* Page Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href="/announcements">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back to Announcements
-                            </Link>
-                        </Button>
                         <div>
                             <h1 className="text-2xl font-bold text-copay-navy flex items-center gap-2">
                                 <Megaphone className="h-6 w-6" />

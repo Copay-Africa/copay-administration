@@ -211,12 +211,6 @@ function TenantDetailPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" asChild>
-              <Link href="/tenants">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Tenants
-              </Link>
-            </Button>
             <div>
               <h1 className="text-2xl font-bold text-copay-navy">
                 {tenant.firstName} {tenant.lastName}

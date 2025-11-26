@@ -311,10 +311,6 @@ export default function ReportDetailsPage({ params }: { params: { type: string }
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                        <Button variant="outline" onClick={() => router.back()}>
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back to Analytics
-                        </Button>
                         <div>
                             <div className="flex items-center space-x-3">
                                 <div className={`p-2 rounded-lg ${reportConfig.color}`}>

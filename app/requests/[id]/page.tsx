@@ -226,12 +226,6 @@ function AccountRequestDetailPage() {
             <div className="max-w-4xl mx-auto space-y-6">
                 {/* Page Header */}
                 <div className="flex items-center space-x-4">
-                    <Button variant="ghost" asChild>
-                        <Link href="/requests">
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            Back to Requests
-                        </Link>
-                    </Button>
                     <div className="flex-1">
                         <h1 className="text-2xl font-bold text-copay-navy">Account Request Details</h1>
                         <p className="text-copay-gray">

@@ -187,12 +187,6 @@ function PaymentDetailsPage() {
                 {/* Page Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center space-x-4">
-                        <Button variant="ghost" asChild>
-                            <Link href="/payments">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back to Payments
-                            </Link>
-                        </Button>
                         <div>
                             <div className="flex items-center space-x-3">
                                 <h1 className="text-2xl font-bold text-copay-navy">
