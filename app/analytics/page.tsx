@@ -48,7 +48,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { apiClient } from '@/lib/api-client';
-import type { AnalyticsSummary } from '@/types';
+import type { AnalyticsSummary, ActivityAnalytics, RevenueAnalytics, UserAnalytics } from '@/types';
 
 interface AnalyticsFilters {
     period: 'last_7_days' | 'last_30_days' | 'last_90_days' | 'last_year';
@@ -57,6 +57,9 @@ interface AnalyticsFilters {
 
 export default function AnalyticsPage() {
     const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
+    const [activityAnalytics, setActivityAnalytics] = useState<ActivityAnalytics | null>(null);
+    const [revenueAnalytics, setRevenueAnalytics] = useState<RevenueAnalytics | null>(null);
+    const [userAnalytics, setUserAnalytics] = useState<UserAnalytics | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [filters, setFilters] = useState<AnalyticsFilters>({
@@ -65,48 +68,121 @@ export default function AnalyticsPage() {
     const [refreshing, setRefreshing] = useState(false);
     const [exportingData, setExportingData] = useState<string | null>(null);
 
-    // Sample data for charts
-    const userActivityData = [
-        { month: 'Jan', users: 450 },
-        { month: 'Feb', users: 520 },
-        { month: 'Mar', users: 680 },
-        { month: 'Apr', users: 720 },
-        { month: 'May', users: 890 },
-        { month: 'Jun', users: 1020 },
-    ];
+    // Generate dynamic chart data from available analytics APIs
+    const getDynamicChartData = () => {
+        const chartData = {
+            userActivityData: [] as Array<{month: string, users: number}>,
+            paymentTrendsData: [] as Array<{month: string, volume: number}>,
+            organizationData: [] as Array<{name: string, value: number}>,
+            paymentDistributionData: [] as Array<{method: string, count: number}>
+        };
 
-    const paymentTrendsData = [
-        { month: 'Jan', volume: 12500 },
-        { month: 'Feb', volume: 15800 },
-        { month: 'Mar', volume: 18900 },
-        { month: 'Apr', volume: 22100 },
-        { month: 'May', volume: 25400 },
-        { month: 'Jun', volume: 28700 },
-    ];
+        // Generate user activity data from user analytics or activity analytics or fallback to summary data
+        if (userAnalytics?.registrationTrends) {
+            const monthlyData = new Map<string, number>();
+            userAnalytics.registrationTrends.forEach((trend: { date: string; count: number }) => {
+                const month = new Date(trend.date).toLocaleDateString('en-US', { month: 'short' });
+                monthlyData.set(month, (monthlyData.get(month) || 0) + trend.count);
+            });
+            chartData.userActivityData = Array.from(monthlyData.entries()).map(([month, users]) => ({ month, users }));
+        } else if (activityAnalytics?.dailyActivityTrends) {
+            const monthlyData = new Map<string, number>();
+            activityAnalytics.dailyActivityTrends.forEach((trend: { date: string; count: number }) => {
+                const month = new Date(trend.date).toLocaleDateString('en-US', { month: 'short' });
+                monthlyData.set(month, (monthlyData.get(month) || 0) + trend.count);
+            });
+            chartData.userActivityData = Array.from(monthlyData.entries()).map(([month, users]) => ({ month, users }));
+        } else if (analyticsSummary?.activity?.topActivityTypes) {
+            // Fallback: Generate user activity from summary data
+            chartData.userActivityData = analyticsSummary.activity.topActivityTypes.slice(-6).map((activity, index) => ({
+                month: new Date(Date.now() - (5 - index) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short' }),
+                users: activity.count || 0
+            }));
+        }
 
-    const organizationData = [
-        { name: 'Cooperative', value: 45 },
-        { name: 'NGO', value: 25 },
-        { name: 'Association', value: 20 },
-        { name: 'Foundation', value: 10 },
-    ];
+        // Generate payment trends from revenue analytics or fallback to summary data
+        if (revenueAnalytics?.monthlyTrends) {
+            chartData.paymentTrendsData = revenueAnalytics.monthlyTrends.slice(-6).map((trend: { month: string; transactionCount: number }) => ({
+                month: new Date(trend.month + '-01').toLocaleDateString('en-US', { month: 'short' }),
+                volume: trend.transactionCount
+            }));
+        } else if (analyticsSummary?.payments?.trends) {
+            // Fallback: Use payment trends from summary
+            chartData.paymentTrendsData = analyticsSummary.payments.trends.slice(-6).map(trend => ({
+                month: new Date(trend.date).toLocaleDateString('en-US', { month: 'short' }),
+                volume: trend.volume
+            }));
+        }
 
-    const paymentDistributionData = [
-        { method: 'Card', count: 1250 },
-        { method: 'Bank Transfer', count: 890 },
-        { method: 'Mobile Money', count: 650 },
-        { method: 'Cash', count: 340 },
-        { method: 'Other', count: 120 },
-    ];
+        // Generate organization data from revenue analytics or fallback to summary data
+        if (revenueAnalytics?.revenueByCooperative) {
+            chartData.organizationData = revenueAnalytics.revenueByCooperative
+                .slice(0, 5)
+                .map((coop: { cooperativeName: string; percentage: number }) => ({
+                    name: coop.cooperativeName.length > 15 
+                        ? coop.cooperativeName.substring(0, 15) + '...' 
+                        : coop.cooperativeName,
+                    value: Math.round(coop.percentage)
+                }));
+        } else if (analyticsSummary?.revenue?.revenueByCooperative) {
+            // Fallback: Use revenue by cooperative from summary
+            chartData.organizationData = analyticsSummary.revenue.revenueByCooperative
+                .slice(0, 5)
+                .map(coop => ({
+                    name: coop.cooperativeName.length > 15 
+                        ? coop.cooperativeName.substring(0, 15) + '...' 
+                        : coop.cooperativeName,
+                    value: Math.round(coop.percentage)
+                }));
+        }
 
-    // Fetch comprehensive analytics summary
-    const fetchAnalyticsSummary = useCallback(async () => {
+        // Generate payment distribution from user role data, revenue analytics or fallback to summary data
+        if (userAnalytics?.usersByRole) {
+            chartData.paymentDistributionData = Object.entries(userAnalytics.usersByRole)
+                .map(([role, data]: [string, { count: number; percentage: number }]) => ({
+                    method: role.toLowerCase().replace('_', ' '),
+                    count: data.count
+                }));
+        } else if (revenueAnalytics?.revenueByPaymentType) {
+            chartData.paymentDistributionData = Object.entries(revenueAnalytics.revenueByPaymentType)
+                .map(([method, data]: [string, { amount: number; percentage: number }]) => ({
+                    method: method.toLowerCase().replace('_', ' '),
+                    count: Math.round(data.amount / 10000) // Convert to approximate count
+                }));
+        } else if (analyticsSummary?.payments?.methodDistribution) {
+            // Fallback: Use payment methods from summary
+            chartData.paymentDistributionData = analyticsSummary.payments.methodDistribution.map(method => ({
+                method: method.method,
+                count: method.count
+            }));
+        }
+
+        return chartData;
+    };
+
+    const dynamicData = getDynamicChartData();
+
+    // Fetch analytics data from available endpoints
+    const fetchAnalyticsData = useCallback(async () => {
         try {
-            const summary = await apiClient.analytics.getSummary(filters.period, filters.cooperativeId);
-            setAnalyticsSummary(summary as AnalyticsSummary);
             setError('');
+            
+            // Fetch from working analytics summary endpoint
+            const summaryData = await apiClient.analytics.getSummary(filters.period, filters.cooperativeId);
+            setAnalyticsSummary(summaryData as AnalyticsSummary);
+
+            // Try to fetch from new endpoints (they will return null if not available)
+            const activityData = await apiClient.analytics.getActivities?.('MONTH');
+            setActivityAnalytics(activityData);
+
+            const revenueData = await apiClient.analytics.getRevenue?.('MONTH', filters.cooperativeId);
+            setRevenueAnalytics(revenueData);
+
+            const userData = await apiClient.analytics.getUsers?.('MONTH', filters.cooperativeId);
+            setUserAnalytics(userData);
+            
         } catch (error) {
-            console.error('Failed to fetch analytics summary:', error);
+            console.error('Failed to fetch analytics data:', error);
             setError('Failed to load analytics data. Please try again.');
         }
     }, [filters]);
@@ -116,7 +192,7 @@ export default function AnalyticsPage() {
         const loadAnalyticsData = async () => {
             setLoading(true);
             try {
-                await fetchAnalyticsSummary();
+                await fetchAnalyticsData();
             } catch (err) {
                 console.error('Failed to load analytics data:', err);
                 setError('Failed to load analytics data');
@@ -126,13 +202,13 @@ export default function AnalyticsPage() {
         };
 
         loadAnalyticsData();
-    }, [fetchAnalyticsSummary]);
+    }, [fetchAnalyticsData]);
 
     // Handle refresh
     const handleRefresh = async () => {
         setRefreshing(true);
         try {
-            await fetchAnalyticsSummary();
+            await fetchAnalyticsData();
         } catch (err) {
             console.error('Failed to refresh analytics data:', err);
             setError('Failed to refresh analytics data');
@@ -317,8 +393,9 @@ export default function AnalyticsPage() {
                             </CardHeader>
                             <CardContent className="p-3 sm:p-6">
                                 <div className="h-[200px] sm:h-[250px] lg:h-[300px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <RechartsLineChart data={userActivityData}>
+                                    {dynamicData.userActivityData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <RechartsLineChart data={dynamicData.userActivityData}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                                             <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                                             <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
@@ -339,6 +416,14 @@ export default function AnalyticsPage() {
                                             />
                                         </RechartsLineChart>
                                     </ResponsiveContainer>
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                                            <div className="text-center">
+                                                <LineChart className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                                <p className="text-sm">No user activity data available</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -351,28 +436,37 @@ export default function AnalyticsPage() {
                             </CardHeader>
                             <CardContent className="p-3 sm:p-6">
                                 <div className="h-[200px] sm:h-[250px] lg:h-[300px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={paymentTrendsData}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                                            <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                                            <Tooltip
-                                                contentStyle={{
-                                                    backgroundColor: 'hsl(var(--card))',
-                                                    border: '1px solid hsl(var(--border))',
-                                                    borderRadius: '8px',
-                                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                                }}
-                                            />
-                                            <Area 
-                                                type="monotone" 
-                                                dataKey="volume" 
-                                                stroke="hsl(var(--primary))" 
-                                                fill="hsl(var(--primary)/0.2)" 
-                                                strokeWidth={2}
-                                            />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
+                                    {dynamicData.paymentTrendsData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={dynamicData.paymentTrendsData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                                <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                                                <Tooltip
+                                                    contentStyle={{
+                                                        backgroundColor: 'hsl(var(--card))',
+                                                        border: '1px solid hsl(var(--border))',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                                    }}
+                                                />
+                                                <Area 
+                                                    type="monotone" 
+                                                    dataKey="volume" 
+                                                    stroke="hsl(var(--primary))" 
+                                                    fill="hsl(var(--primary)/0.2)" 
+                                                    strokeWidth={2}
+                                                />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                                            <div className="text-center">
+                                                <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                                <p className="text-sm">No payment trends data available</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -393,7 +487,7 @@ export default function AnalyticsPage() {
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RechartsPieChart>
                                             <Pie
-                                                data={organizationData}
+                                                data={dynamicData.organizationData}
                                                 dataKey="value"
                                                 nameKey="name"
                                                 cx="50%"
@@ -402,7 +496,7 @@ export default function AnalyticsPage() {
                                                 fill="hsl(var(--primary))"
                                                 label
                                             >
-                                                {organizationData.map((entry, index) => (
+                                                {dynamicData.organizationData.map((entry, index) => (
                                                     <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${index + 1}))`} />
                                                 ))}
                                             </Pie>
@@ -428,22 +522,31 @@ export default function AnalyticsPage() {
                             </CardHeader>
                             <CardContent className="p-3 sm:p-6">
                                 <div className="h-[200px] sm:h-[250px] lg:h-[300px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={paymentDistributionData}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                                            <XAxis dataKey="method" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                                            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                                            <Tooltip
-                                                contentStyle={{
-                                                    backgroundColor: 'hsl(var(--card))',
-                                                    border: '1px solid hsl(var(--border))',
-                                                    borderRadius: '8px',
-                                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                                }}
-                                            />
-                                            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
+                                    {dynamicData.paymentDistributionData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={dynamicData.paymentDistributionData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                                <XAxis dataKey="method" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                                                <Tooltip
+                                                    contentStyle={{
+                                                        backgroundColor: 'hsl(var(--card))',
+                                                        border: '1px solid hsl(var(--border))',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                                    }}
+                                                />
+                                                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                                            <div className="text-center">
+                                                <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                                <p className="text-sm">No payment distribution data available</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>

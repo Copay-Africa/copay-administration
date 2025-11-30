@@ -33,6 +33,11 @@ import type {
   BatchRedistributionResult,
   PendingRedistributionsResponse,
   PendingRedistributionFilters,
+  ActivityAnalytics,
+  RevenueAnalytics,
+  UserAnalytics,
+  TimePeriod,
+  AnalyticsActivityType,
 } from "@/types";
 
 // Extend axios types for our custom metadata
@@ -1256,6 +1261,57 @@ class ApiClient {
         Object.keys(params).length > 0 ? { params } : {}
       );
       return response.data;
+    },
+    getActivities: async (period?: 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR', activityType?: string) => {
+      try {
+        const params: any = {};
+        if (period) params.period = period;
+        if (activityType) params.activityType = activityType;
+        
+        const response: AxiosResponse = await this.instance.get(
+          "/analytics/activities",
+          Object.keys(params).length > 0 ? { params } : {}
+        );
+        return response.data;
+      } catch (error) {
+        // Log the error but don't throw - endpoint might not exist yet
+        console.warn('Analytics activities endpoint not available:', error);
+        return null;
+      }
+    },
+    getRevenue: async (period?: 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR', cooperativeId?: string) => {
+      try {
+        const params: any = {};
+        if (period) params.period = period;
+        if (cooperativeId) params.cooperativeId = cooperativeId;
+        
+        const response: AxiosResponse = await this.instance.get(
+          "/analytics/revenue",
+          Object.keys(params).length > 0 ? { params } : {}
+        );
+        return response.data;
+      } catch (error) {
+        // Log the error but don't throw - endpoint might not exist yet
+        console.warn('Analytics revenue endpoint not available:', error);
+        return null;
+      }
+    },
+    getUsers: async (period?: 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR', cooperativeId?: string) => {
+      try {
+        const params: any = {};
+        if (period) params.period = period;
+        if (cooperativeId) params.cooperativeId = cooperativeId;
+        
+        const response: AxiosResponse = await this.instance.get(
+          "/analytics/users",
+          Object.keys(params).length > 0 ? { params } : {}
+        );
+        return response.data;
+      } catch (error) {
+        // Log the error but don't throw - endpoint might not exist yet
+        console.warn('Analytics users endpoint not available:', error);
+        return null;
+      }
     },
     exportData: async (type: 'payments' | 'users' | 'revenue', period?: 'last_7_days' | 'last_30_days' | 'last_90_days' | 'last_year' | 'custom', cooperativeId?: string) => {
       const params: any = { type };

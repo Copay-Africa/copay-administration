@@ -1183,3 +1183,95 @@ export interface PendingRedistributionFilters {
   toDate?: string;
 }
 
+/**
+ * New Analytics API types based on API documentation
+ */
+export type TimePeriod = 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR';
+export type AnalyticsActivityType = 'USER_REGISTRATION' | 'PAYMENT_MADE' | 'COOPERATIVE_JOINED' | 'COMPLAINT_SUBMITTED';
+
+export interface ActivityAnalytics {
+  totalActivities: number;
+  activitiesByType: {
+    [key in AnalyticsActivityType]: {
+      count: number;
+      percentage: number;
+    }
+  };
+  dailyActivityTrends: Array<{
+    date: string;
+    count: number;
+  }>;
+  peakHours: Array<{
+    hour: number;
+    count: number;
+  }>;
+  growth: number;
+}
+
+export interface RevenueAnalytics {
+  totalRevenue: number;
+  averageRevenuePerTransaction: number;
+  revenueByCooperative: Array<{
+    cooperativeId: string;
+    cooperativeName: string;
+    revenue: number;
+    percentage: number;
+  }>;
+  revenueByPaymentType: {
+    RENT: {
+      amount: number;
+      percentage: number;
+    };
+    UTILITIES: {
+      amount: number;
+      percentage: number;
+    };
+    MAINTENANCE: {
+      amount: number;
+      percentage: number;
+    };
+  };
+  monthlyTrends: Array<{
+    month: string;
+    revenue: number;
+    transactionCount: number;
+  }>;
+  projections: {
+    nextMonth: number;
+    nextQuarter: number;
+  };
+  growth: number;
+}
+
+export interface UserAnalytics {
+  totalUsers: number;
+  activeUsers: number;
+  newUsers: number;
+  usersByRole: {
+    TENANT: {
+      count: number;
+      percentage: number;
+    };
+    COOPERATIVE_ADMIN: {
+      count: number;
+      percentage: number;
+    };
+    ORGANIZATION_ADMIN: {
+      count: number;
+      percentage: number;
+    };
+  };
+  registrationTrends: Array<{
+    date: string;
+    count: number;
+  }>;
+  engagementMetrics: {
+    averageSessionsPerUser: number;
+    averagePaymentsPerUser: number;
+  };
+  growth: {
+    total: number;
+    active: number;
+  };
+}
+

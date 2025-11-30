@@ -288,7 +288,7 @@ function PaymentsPage() {
         )}
 
         {/* Professional Payment Analytics Charts */}
-        {analytics && !analyticsLoading && (
+        {analytics && !analyticsLoading && analytics.methodDistribution && analytics.methodDistribution.length > 0 ? (
           <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
             {/* Payment Methods Distribution Pie Chart */}
             <Card className="border border-border shadow-sm">
@@ -322,20 +322,21 @@ function PaymentsPage() {
                       >
                         {analytics.methodDistribution.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={[
-                            '#10B981', // Green for Card
-                            '#3B82F6', // Blue for Bank Transfer
-                            '#8B5CF6', // Purple for Mobile Money
-                            '#F59E0B', // Orange for Cash
-                            '#EF4444'  // Red for others
+                            'hsl(var(--chart-1))', // Primary
+                            'hsl(var(--chart-2))', // Secondary
+                            'hsl(var(--chart-3))', // Accent
+                            'hsl(var(--chart-4))', // Muted
+                            'hsl(var(--chart-5))'  // Destructive
                           ][index % 5]} />
                         ))}
                       </Pie>
                       <Tooltip 
                         contentStyle={{ 
-                          backgroundColor: 'white',
-                          border: '1px solid #e5e5e5',
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
                           borderRadius: '8px',
-                          fontSize: '12px'
+                          fontSize: '12px',
+                          color: 'hsl(var(--foreground))'
                         }}
                         formatter={(value: number, name: string) => [
                           `${formatNumber(Number(value))} transactions`,
@@ -381,10 +382,11 @@ function PaymentsPage() {
                       <YAxis fontSize={12} />
                       <Tooltip 
                         contentStyle={{ 
-                          backgroundColor: 'white',
-                          border: '1px solid #e5e5e5',
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
                           borderRadius: '8px',
-                          fontSize: '12px'
+                          fontSize: '12px',
+                          color: 'hsl(var(--foreground))'
                         }}
                         formatter={(value: number) => [
                           `${formatNumber(Number(value))} transactions`,
@@ -394,10 +396,10 @@ function PaymentsPage() {
                       <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                         {analytics.statusDistribution.map((entry, index) => (
                           <Cell key={`status-cell-${index}`} fill={
-                            entry.status === 'COMPLETED' ? '#10B981' :
-                              entry.status === 'FAILED' ? '#EF4444' :
-                                entry.status === 'PENDING' ? '#F59E0B' :
-                                  '#6B7280'
+                            entry.status === 'COMPLETED' ? 'hsl(var(--chart-1))' :
+                              entry.status === 'FAILED' ? 'hsl(var(--destructive))' :
+                                entry.status === 'PENDING' ? 'hsl(var(--warning))' :
+                                  'hsl(var(--muted-foreground))'
                           } />
                         ))}
                       </Bar>
@@ -407,7 +409,17 @@ function PaymentsPage() {
               </CardContent>
             </Card>
           </div>
-        )}
+        ) : analytics && !analyticsLoading ? (
+          <Card className="border-muted bg-muted/5">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No Analytics Data Available</h3>
+              <p className="text-muted-foreground text-center max-w-md">
+                Analytics data will appear here once payment transactions have been processed. Check back after some activity.
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {/* Popular Payment Method Highlight */}
         {analytics && !analyticsLoading && analytics.mostPopularMethod && (
@@ -428,7 +440,7 @@ function PaymentsPage() {
         )}
 
         {/* Revenue Analytics Section */}
-        {revenueAnalytics && !revenueLoading ? (
+        {revenueAnalytics && !revenueLoading && revenueAnalytics.revenueTrends && revenueAnalytics.revenueTrends.length > 0 ? (
           <div className="space-y-6 border-t border-border pt-6"> {/* Add top border to separate sections */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -549,8 +561,8 @@ function PaymentsPage() {
                           yAxisId="revenue"
                           type="monotone" 
                           dataKey="revenue" 
-                          stroke="#10B981" 
-                          fill="#10B981"
+                          stroke="hsl(var(--chart-1))" 
+                          fill="hsl(var(--chart-1))"
                           fillOpacity={0.3}
                           strokeWidth={2}
                           name="Revenue"
@@ -559,7 +571,7 @@ function PaymentsPage() {
                           yAxisId="transactions"
                           type="monotone" 
                           dataKey="transactions" 
-                          stroke="#3B82F6" 
+                          stroke="hsl(var(--chart-2))" 
                           strokeWidth={2}
                           dot={{ r: 4 }}
                           name="Transactions"
@@ -601,21 +613,22 @@ function PaymentsPage() {
                         >
                           {revenueAnalytics.revenueByCooperative.slice(0, 6).map((entry, index) => (
                             <Cell key={`coop-cell-${index}`} fill={[
-                              '#8B5CF6', // Purple
-                              '#3B82F6', // Blue
-                              '#10B981', // Green
-                              '#F59E0B', // Orange
-                              '#EF4444', // Red
-                              '#6B7280'  // Gray
+                              'hsl(var(--chart-1))', // Primary
+                              'hsl(var(--chart-2))', // Secondary
+                              'hsl(var(--chart-3))', // Accent
+                              'hsl(var(--chart-4))', // Muted
+                              'hsl(var(--chart-5))', // Warning
+                              'hsl(var(--muted-foreground))'  // Gray
                             ][index % 6]} />
                           ))}
                         </Pie>
                         <Tooltip 
                           contentStyle={{ 
-                            backgroundColor: 'white',
-                            border: '1px solid #e5e5e5',
+                            backgroundColor: 'hsl(var(--background))',
+                            border: '1px solid hsl(var(--border))',
                             borderRadius: '8px',
-                            fontSize: '12px'
+                            fontSize: '12px',
+                            color: 'hsl(var(--foreground))'
                           }}
                           formatter={(value: number, name: string) => [
                             formatCurrency(value), 
@@ -660,10 +673,11 @@ function PaymentsPage() {
                         <YAxis fontSize={12} />
                         <Tooltip 
                           contentStyle={{ 
-                            backgroundColor: 'white',
-                            border: '1px solid #e5e5e5',
+                            backgroundColor: 'hsl(var(--background))',
+                            border: '1px solid hsl(var(--border))',
                             borderRadius: '8px',
-                            fontSize: '12px'
+                            fontSize: '12px',
+                            color: 'hsl(var(--foreground))'
                           }}
                           formatter={(value: number) => [
                             formatCurrency(value),
@@ -673,11 +687,11 @@ function PaymentsPage() {
                         <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
                           {revenueAnalytics.revenueByMethod.map((entry, index) => (
                             <Cell key={`method-cell-${index}`} fill={[
-                              '#10B981', // Green
-                              '#3B82F6', // Blue
-                              '#8B5CF6', // Purple
-                              '#F59E0B', // Orange
-                              '#EF4444'  // Red
+                              'hsl(var(--chart-1))', // Primary
+                              'hsl(var(--chart-2))', // Secondary
+                              'hsl(var(--chart-3))', // Accent
+                              'hsl(var(--chart-4))', // Muted
+                              'hsl(var(--chart-5))'  // Warning
                             ][index % 5]} />
                           ))}
                         </Bar>
@@ -688,22 +702,39 @@ function PaymentsPage() {
               </Card>
             </div>
           </div>
+        ) : revenueAnalytics && !revenueLoading ? (
+          <div className="space-y-6 border-t border-border pt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">Revenue Analytics</h2>
+              </div>
+            </div>
+            <Card className="border-muted bg-muted/5">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <DollarSign className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No Revenue Data Available</h3>
+                <p className="text-muted-foreground text-center max-w-md">
+                  Revenue analytics will be displayed here once payment transactions generate revenue data.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         ) : revenueLoading ? (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-copay-navy">Revenue Analytics</h2>
-              <div className="h-8 w-32 bg-gray-200 rounded animate-pulse"></div>
+              <h2 className="text-xl font-bold text-foreground">Revenue Analytics</h2>
+              <div className="h-8 w-32 bg-muted rounded animate-pulse"></div>
             </div>
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               {[...Array(4)].map((_, i) => (
                 <Card key={i}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 bg-muted rounded animate-pulse w-20"></div>
+                    <div className="h-4 w-4 bg-muted rounded animate-pulse"></div>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-8 bg-gray-200 rounded animate-pulse w-24 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
+                    <div className="h-8 bg-muted rounded animate-pulse w-24 mb-2"></div>
+                    <div className="h-3 bg-muted rounded animate-pulse w-16"></div>
                   </CardContent>
                 </Card>
               ))}
@@ -722,7 +753,7 @@ function PaymentsPage() {
           <CardContent>
             <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 mb-6">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-copay-gray" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search payments..."
                   value={filters.search || ''}
@@ -753,11 +784,11 @@ function PaymentsPage() {
               <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="animate-pulse flex items-center space-x-4 p-4">
-                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/6"></div>
+                    <div className="h-4 bg-muted rounded w-1/4"></div>
+                    <div className="h-4 bg-muted rounded w-1/6"></div>
+                    <div className="h-4 bg-muted rounded w-1/6"></div>
+                    <div className="h-4 bg-muted rounded w-1/6"></div>
+                    <div className="h-4 bg-muted rounded w-1/6"></div>
                   </div>
                 ))}
               </div>

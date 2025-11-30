@@ -139,56 +139,56 @@ export function BalanceRedistribution({ onRefresh }: BalanceRedistributionProps)
             {summary && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card>
-                        <CardContent className="p-6">
+                        <CardContent className="p-3 sm:p-6">
                             <div className="flex items-center space-x-2">
-                                <Users className="h-4 w-4 text-blue-600" />
+                                <Users className="h-4 w-4 text-primary" />
                                 <div className="flex-1">
                                     <p className="text-sm font-medium text-muted-foreground">
                                         Total Cooperatives
                                     </p>
-                                    <p className="text-2xl font-bold">{summary.totalCooperatives}</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-foreground">{summary.totalCooperatives}</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardContent className="p-6">
+                        <CardContent className="p-3 sm:p-6">
                             <div className="flex items-center space-x-2">
-                                <Wallet className="h-4 w-4 text-green-600" />
+                                <Wallet className="h-4 w-4 text-primary" />
                                 <div className="flex-1">
                                     <p className="text-sm font-medium text-muted-foreground">
                                         Total Balance
                                     </p>
-                                    <p className="text-2xl font-bold">{formatCurrency(summary.totalBalance)}</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-foreground">{formatCurrency(summary.totalBalance)}</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardContent className="p-6">
+                        <CardContent className="p-3 sm:p-6">
                             <div className="flex items-center space-x-2">
-                                <TrendingUp className="h-4 w-4 text-blue-600" />
+                                <TrendingUp className="h-4 w-4 text-primary" />
                                 <div className="flex-1">
                                     <p className="text-sm font-medium text-muted-foreground">
                                         Total Revenue
                                     </p>
-                                    <p className="text-2xl font-bold">{formatCurrency(summary.totalRevenue)}</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-foreground">{formatCurrency(summary.totalRevenue)}</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardContent className="p-6">
+                        <CardContent className="p-3 sm:p-6">
                             <div className="flex items-center space-x-2">
-                                <DollarSign className="h-4 w-4 text-orange-600" />
+                                <DollarSign className="h-4 w-4 text-primary" />
                                 <div className="flex-1">
                                     <p className="text-sm font-medium text-muted-foreground">
                                         Total Fees (Platform)
                                     </p>
-                                    <p className="text-2xl font-bold">{formatCurrency(summary.totalFees)}</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-foreground">{formatCurrency(summary.totalFees)}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -201,8 +201,8 @@ export function BalanceRedistribution({ onRefresh }: BalanceRedistributionProps)
                 <CardHeader>
                     <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                         <div>
-                            <CardTitle>Cooperative Balances</CardTitle>
-                            <CardDescription>
+                            <CardTitle className="text-foreground text-base sm:text-lg">Cooperative Balances</CardTitle>
+                            <CardDescription className="text-xs sm:text-sm">
                                 View all cooperative balance information and payment statistics for {selectedMonth}
                             </CardDescription>
                         </div>
@@ -234,9 +234,9 @@ export function BalanceRedistribution({ onRefresh }: BalanceRedistributionProps)
                     </div>
                 </CardHeader>                <CardContent>
                     {error && (
-                        <div className="mb-4 p-4 border border-red-200 bg-red-50 rounded-lg flex items-center space-x-2">
-                            <AlertTriangle className="h-5 w-5 text-red-500" />
-                            <span className="text-red-700">{error}</span>
+                        <div className="mb-4 p-4 border border-destructive/20 bg-destructive/5 rounded-lg flex items-center space-x-2">
+                            <AlertTriangle className="h-5 w-5 text-destructive" />
+                            <span className="text-destructive">{error}</span>
                         </div>
                     )}
 
@@ -250,19 +250,19 @@ export function BalanceRedistribution({ onRefresh }: BalanceRedistributionProps)
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Cooperative</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Code</TableHead>
-                                        <TableHead className="hidden md:table-cell">Status</TableHead>
-                                        <TableHead className="text-right">Balance</TableHead>
-                                        <TableHead className="text-right hidden lg:table-cell">Received</TableHead>
-                                        <TableHead className="text-right hidden lg:table-cell">Withdrawn</TableHead>
-                                        <TableHead className="text-right hidden xl:table-cell">Pending</TableHead>
-                                        <TableHead className="text-right hidden lg:table-cell">Payments</TableHead>
-                                        <TableHead className="text-right">Revenue</TableHead>
-                                        <TableHead className="text-right hidden lg:table-cell">Fees</TableHead>
-                                        <TableHead className="text-right hidden xl:table-cell">Avg Payment</TableHead>
-                                        <TableHead className="hidden lg:table-cell">Last Payment</TableHead>
-                                        <TableHead className="sm:hidden">Actions</TableHead>
+                                        <TableHead className="text-xs sm:text-sm">Cooperative</TableHead>
+                                        <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Code</TableHead>
+                                        <TableHead className="text-xs sm:text-sm hidden md:table-cell">Status</TableHead>
+                                        <TableHead className="text-xs sm:text-sm text-right">Balance</TableHead>
+                                        <TableHead className="text-xs sm:text-sm text-right hidden lg:table-cell">Received</TableHead>
+                                        <TableHead className="text-xs sm:text-sm text-right hidden lg:table-cell">Withdrawn</TableHead>
+                                        <TableHead className="text-xs sm:text-sm text-right hidden xl:table-cell">Pending</TableHead>
+                                        <TableHead className="text-xs sm:text-sm text-right hidden lg:table-cell">Payments</TableHead>
+                                        <TableHead className="text-xs sm:text-sm text-right">Revenue</TableHead>
+                                        <TableHead className="text-xs sm:text-sm text-right hidden lg:table-cell">Fees</TableHead>
+                                        <TableHead className="text-xs sm:text-sm text-right hidden xl:table-cell">Avg Payment</TableHead>
+                                        <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Last Payment</TableHead>
+                                        <TableHead className="text-xs sm:text-sm sm:hidden">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -275,9 +275,9 @@ export function BalanceRedistribution({ onRefresh }: BalanceRedistributionProps)
                                     ) : (
                                         cooperativeBalances.map((item) => (
                                             <TableRow key={item.cooperative.id}>
-                                                <TableCell className="font-medium">
+                                                <TableCell className="font-medium p-2 sm:p-4">
                                                     <div>
-                                                        <div className="font-medium">{item.cooperative.name}</div>
+                                                        <div className="font-medium text-xs sm:text-sm text-foreground">{item.cooperative.name}</div>
                                                         <div className="text-xs text-muted-foreground sm:hidden">
                                                             Code: {item.cooperative.code} • {getStatusBadge(item.cooperative.status)}
                                                         </div>
@@ -286,47 +286,49 @@ export function BalanceRedistribution({ onRefresh }: BalanceRedistributionProps)
                                                         </div>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="hidden sm:table-cell">
+                                                <TableCell className="hidden sm:table-cell p-2 sm:p-4">
                                                     <code className="text-xs bg-muted px-1 py-0.5 rounded">
                                                         {item.cooperative.code}
                                                     </code>
                                                 </TableCell>
-                                                <TableCell className="hidden md:table-cell">
+                                                <TableCell className="hidden md:table-cell p-2 sm:p-4">
                                                     {getStatusBadge(item.cooperative.status)}
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono font-numeric">
-                                                    <div>
+                                                <TableCell className="text-right font-mono font-numeric p-2 sm:p-4">
+                                                    <div className="text-xs sm:text-sm font-semibold text-foreground">
                                                         {formatCurrency(item.balance.currentBalance)}
                                                     </div>
                                                     <div className="text-xs text-muted-foreground sm:hidden">
                                                         Rcvd: {formatCurrency(item.balance.totalReceived)}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono hidden lg:table-cell">
+                                                <TableCell className="text-right font-mono hidden lg:table-cell p-2 sm:p-4 text-xs sm:text-sm">
                                                     {formatCurrency(item.balance.totalReceived)}
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono hidden lg:table-cell">
+                                                <TableCell className="text-right font-mono hidden lg:table-cell p-2 sm:p-4 text-xs sm:text-sm">
                                                     {formatCurrency(item.balance.totalWithdrawn)}
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono hidden xl:table-cell">
+                                                <TableCell className="text-right font-mono hidden xl:table-cell p-2 sm:p-4 text-xs sm:text-sm">
                                                     {formatCurrency(item.balance.pendingBalance)}
                                                 </TableCell>
-                                                <TableCell className="text-right hidden lg:table-cell">
+                                                <TableCell className="text-right hidden lg:table-cell p-2 sm:p-4 text-xs sm:text-sm">
                                                     {item.stats.totalPayments.toLocaleString()}
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono">
-                                                    {formatCurrency(item.stats.totalRevenue)}
+                                                <TableCell className="text-right font-mono p-2 sm:p-4">
+                                                    <div className="text-xs sm:text-sm font-semibold text-foreground">
+                                                        {formatCurrency(item.stats.totalRevenue)}
+                                                    </div>
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono text-orange-600 hidden lg:table-cell">
+                                                <TableCell className="text-right font-mono text-secondary-foreground hidden lg:table-cell p-2 sm:p-4 text-xs sm:text-sm">
                                                     {formatCurrency(item.stats.totalFees)}
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono hidden xl:table-cell">
+                                                <TableCell className="text-right font-mono hidden xl:table-cell p-2 sm:p-4 text-xs sm:text-sm">
                                                     {formatCurrency(item.stats.averagePaymentAmount)}
                                                 </TableCell>
-                                                <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">
+                                                <TableCell className="text-xs sm:text-sm text-muted-foreground hidden lg:table-cell p-2 sm:p-4">
                                                     {formatDate(item.balance.lastPaymentAt)}
                                                 </TableCell>
-                                                <TableCell className="sm:hidden">
+                                                <TableCell className="sm:hidden p-2">
                                                     <Button size="sm" variant="outline" className="text-xs">
                                                         Details
                                                     </Button>

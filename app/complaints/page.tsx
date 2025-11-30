@@ -41,22 +41,22 @@ import type {
 const getStatusBadge = (status: ComplaintStatus) => {
     switch (status) {
         case 'OPEN':
-            return <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300">
+            return <Badge variant="destructive" className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
                 <AlertTriangle className="w-3 h-3 mr-1" />
                 Open
             </Badge>;
         case 'IN_PROGRESS':
-            return <Badge variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+            return <Badge variant="default" className="bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100">
                 <Clock className="w-3 h-3 mr-1" />
                 In Progress
             </Badge>;
         case 'RESOLVED':
-            return <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+            return <Badge variant="default" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Resolved
             </Badge>;
         case 'CLOSED':
-            return <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-300">
+            return <Badge variant="secondary" className="bg-muted text-muted-foreground border-border">
                 <XCircle className="w-3 h-3 mr-1" />
                 Closed
             </Badge>;
@@ -69,22 +69,22 @@ const getStatusBadge = (status: ComplaintStatus) => {
 const getPriorityBadge = (priority: ComplaintPriority) => {
     switch (priority) {
         case 'URGENT':
-            return <Badge variant="destructive" className="bg-red-600 text-white">
+            return <Badge variant="destructive" className="bg-destructive text-destructive-foreground">
                 <Flag className="w-3 h-3 mr-1" />
                 Urgent
             </Badge>;
         case 'HIGH':
-            return <Badge variant="destructive" className="bg-orange-500 text-white">
+            return <Badge variant="destructive" className="bg-orange-500 text-white dark:bg-orange-600">
                 <Flag className="w-3 h-3 mr-1" />
                 High
             </Badge>;
         case 'MEDIUM':
-            return <Badge variant="default" className="bg-blue-500 text-white">
+            return <Badge variant="default" className="bg-primary text-primary-foreground">
                 <Flag className="w-3 h-3 mr-1" />
                 Medium
             </Badge>;
         case 'LOW':
-            return <Badge variant="secondary" className="bg-gray-400 text-white">
+            return <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
                 <Flag className="w-3 h-3 mr-1" />
                 Low
             </Badge>;
@@ -267,8 +267,8 @@ export default function ComplaintsPage() {
             <DashboardLayout>
                 <div className="flex items-center justify-center h-64">
                     <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-copay-navy mx-auto"></div>
-                        <p className="mt-2 text-sm text-gray-600">Loading complaints...</p>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                        <p className="mt-2 text-sm text-muted-foreground">Loading complaints...</p>
                     </div>
                 </div>
             </DashboardLayout>
@@ -311,11 +311,11 @@ export default function ComplaintsPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-copay-navy flex items-center gap-2">
-                            <MessageSquare className="w-8 h-8 text-copay-blue" />
+                        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+                            <MessageSquare className="w-8 h-8 text-primary" />
                             Complaints Management
                         </h1>
-                        <p className="text-copay-gray mt-1">Manage and resolve tenant issues and complaints</p>
+                        <p className="text-muted-foreground mt-1">Manage and resolve tenant issues and complaints</p>
                     </div>
                     <div className="flex space-x-3">
                         <Button variant="outline" size="sm">
@@ -341,10 +341,10 @@ export default function ComplaintsPage() {
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Open Issues</CardTitle>
-                                <AlertTriangle className="h-4 w-4 text-red-500" />
+                                <AlertTriangle className="h-4 w-4 text-destructive" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-red-600">
+                                <div className="text-2xl font-bold text-destructive">
                                     {(stats?.byStatus || []).find((s) => s.status === 'OPEN')?.count || 0}
                                 </div>
                             </CardContent>
@@ -382,7 +382,7 @@ export default function ComplaintsPage() {
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                             <div className="flex flex-1 space-x-4">
                                 <div className="relative flex-1 max-w-sm">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                                     <Input
                                         placeholder="Search complaints..."
                                         value={filters.search || ''}
@@ -435,34 +435,34 @@ export default function ComplaintsPage() {
 
                     <CardContent>
                         {error && (
-                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                                <p className="text-sm text-red-600">{error}</p>
+                            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                                <p className="text-sm text-destructive">{error}</p>
                             </div>
                         )}
 
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr className="border-b border-gray-200">
+                                    <tr className="border-b border-border">
                                         <th className="text-left py-3 px-4">
                                             <input
                                                 type="checkbox"
                                                 checked={selectedComplaints.length === complaints.length && complaints.length > 0}
                                                 onChange={handleSelectAll}
-                                                className="rounded border-gray-300 text-copay-navy focus:ring-copay-navy"
+                                                className="rounded border-input text-primary focus:ring-primary"
                                             />
                                         </th>
-                                        <th className="text-left py-3 px-4 font-medium text-gray-900">Complaint</th>
-                                        <th className="text-left py-3 px-4 font-medium text-gray-900">Submitter</th>
-                                        <th className="text-left py-3 px-4 font-medium text-gray-900">Priority</th>
-                                        <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
-                                        <th className="text-left py-3 px-4 font-medium text-gray-900">Created</th>
-                                        <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
+                                        <th className="text-left py-3 px-4 font-medium text-foreground">Complaint</th>
+                                        <th className="text-left py-3 px-4 font-medium text-foreground">Submitter</th>
+                                        <th className="text-left py-3 px-4 font-medium text-foreground">Priority</th>
+                                        <th className="text-left py-3 px-4 font-medium text-foreground">Status</th>
+                                        <th className="text-left py-3 px-4 font-medium text-foreground">Created</th>
+                                        <th className="text-left py-3 px-4 font-medium text-foreground">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {complaints.map((complaint) => (
-                                        <tr key={complaint.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                        <tr key={complaint.id} className="border-b border-border hover:bg-muted/50">
                                             <td className="py-3 px-4">
                                                 <input
                                                     type="checkbox"
@@ -474,33 +474,33 @@ export default function ComplaintsPage() {
                                                             setSelectedComplaints(selectedComplaints.filter(id => id !== complaint.id));
                                                         }
                                                     }}
-                                                    className="rounded border-gray-300 text-copay-navy focus:ring-copay-navy"
+                                                    className="rounded border-input text-primary focus:ring-primary"
                                                 />
                                             </td>
                                             <td className="py-3 px-4">
                                                 <div>
-                                                    <p className="font-medium text-gray-900">{complaint.title}</p>
-                                                    <p className="text-sm text-gray-500 truncate max-w-xs">{complaint.description}</p>
+                                                    <p className="font-medium text-foreground">{complaint.title}</p>
+                                                    <p className="text-sm text-muted-foreground truncate max-w-xs">{complaint.description}</p>
                                                     {complaint.cooperative && (
-                                                        <p className="text-xs text-gray-400 mt-1">{complaint.cooperative.name}</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">{complaint.cooperative.name}</p>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="py-3 px-4">
                                                 <div className="flex items-center">
-                                                    <User className="w-4 h-4 mr-2 text-gray-400" />
+                                                    <User className="w-4 h-4 mr-2 text-muted-foreground" />
                                                     <div>
-                                                        <p className="text-sm font-medium text-gray-900">
+                                                        <p className="text-sm font-medium text-foreground">
                                                             {complaint.user?.firstName} {complaint.user?.lastName}
                                                         </p>
-                                                        <p className="text-xs text-gray-500">{complaint.user?.phone}</p>
+                                                        <p className="text-xs text-muted-foreground">{complaint.user?.phone}</p>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="py-3 px-4">{getPriorityBadge(complaint.priority)}</td>
                                             <td className="py-3 px-4">{getStatusBadge(complaint.status)}</td>
                                             <td className="py-3 px-4">
-                                                <div className="flex items-center text-sm text-gray-500">
+                                                <div className="flex items-center text-sm text-muted-foreground">
                                                     <Calendar className="w-4 h-4 mr-2" />
                                                     {new Date(complaint.createdAt).toLocaleDateString()}
                                                 </div>
@@ -539,9 +539,9 @@ export default function ComplaintsPage() {
 
                             {complaints.length === 0 && (
                                 <div className="text-center py-8">
-                                    <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                                    <p className="text-gray-500">No complaints found</p>
-                                    <p className="text-sm text-gray-400">Complaints will appear here once submitted by tenants</p>
+                                    <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                    <p className="text-muted-foreground">No complaints found</p>
+                                    <p className="text-sm text-muted-foreground">Complaints will appear here once submitted by tenants</p>
                                 </div>
                             )}
                         </div>

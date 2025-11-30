@@ -157,7 +157,7 @@ function StatCard({ title, value, description, icon: Icon, trend }: StatCardProp
         <div className="text-xl sm:text-2xl font-bold text-foreground font-numeric">
           {typeof value === 'number' ? formatNumber(value) : value}
         </div>
-        <p className="text-xs text-copay-gray mt-1 line-clamp-1">
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
           {description}
         </p>
         {trend && (
@@ -431,10 +431,10 @@ function DashboardPage() {
         {/* Main Content Grid */}
         <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
           {/* Revenue Overview */}
-          <Card className="xl:col-span-1 border-copay-light-gray">
+          <Card className="xl:col-span-1 border border-border shadow-sm">
             <CardHeader>
-              <CardTitle className="text-copay-navy flex items-center space-x-2">
-                <DollarSign className="h-5 w-5" />
+              <CardTitle className="text-foreground flex items-center space-x-2">
+                <DollarSign className="h-5 w-5 text-primary" />
                 <span>Revenue Overview</span>
               </CardTitle>
               <CardDescription>Monthly revenue growth and performance</CardDescription>
@@ -455,29 +455,15 @@ function DashboardPage() {
                     </p>
                   </div>
                 </div>
-
-                {/* Progress bar */}
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Monthly Goal: {formatCurrency(3000000)}</span>
-                    <span className="font-semibold text-foreground">96%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-500"
-                      style={{ width: '96%' }}
-                    ></div>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Recent Activity */}
-          <Card className="xl:col-span-1 border-copay-light-gray">
+          <Card className="xl:col-span-1 border border-border shadow-sm">
             <CardHeader>
-              <CardTitle className="text-copay-navy flex items-center space-x-2">
-                <Activity className="h-5 w-5" />
+              <CardTitle className="text-foreground flex items-center space-x-2">
+                <Activity className="h-5 w-5 text-primary" />
                 <span>Recent Activity</span>
               </CardTitle>
               <CardDescription>Latest system activities and updates</CardDescription>
@@ -536,8 +522,8 @@ function DashboardPage() {
           {/* System Health */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-copay-navy flex items-center space-x-2">
-                <Activity className="h-5 w-5" />
+              <CardTitle className="text-foreground flex items-center space-x-2">
+                <Activity className="h-5 w-5 text-primary" />
                 <span>System Health</span>
               </CardTitle>
               <CardDescription>Platform performance and status metrics</CardDescription>
@@ -558,7 +544,7 @@ function DashboardPage() {
                       <Users className="h-4 w-4 text-primary" />
                       <span className="text-sm text-muted-foreground">Monthly Active Users</span>
                     </div>
-                    <span className="text-sm font-semibold text-copay-navy">
+                    <span className="text-sm font-semibold text-foreground">
                       {formatNumber(systemHealth.monthlyActiveUsers)}
                     </span>
                   </div>
@@ -568,7 +554,7 @@ function DashboardPage() {
                       <Building2 className="h-4 w-4 text-primary" />
                       <span className="text-sm text-muted-foreground">Active Organizations</span>
                     </div>
-                    <span className="text-sm font-semibold text-copay-navy">
+                    <span className="text-sm font-semibold text-foreground">
                       {formatNumber(systemHealth.activeOrganizations)}
                     </span>
                   </div>
@@ -578,7 +564,7 @@ function DashboardPage() {
                       <CreditCard className="h-4 w-4 text-primary" />
                       <span className="text-sm text-muted-foreground">Total Transactions</span>
                     </div>
-                    <span className="text-sm font-semibold text-copay-navy">
+                    <span className="text-sm font-semibold text-foreground">
                       {formatNumber(systemHealth.totalTransactions)}
                     </span>
                   </div>
@@ -590,8 +576,8 @@ function DashboardPage() {
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-copay-navy flex items-center space-x-2">
-                <Settings className="h-5 w-5" />
+              <CardTitle className="text-foreground flex items-center space-x-2">
+                <Settings className="h-5 w-5 text-primary" />
                 <span>Quick Actions</span>
               </CardTitle>
               <CardDescription>Common administrative tasks and shortcuts</CardDescription>
