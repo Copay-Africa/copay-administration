@@ -14,7 +14,8 @@ import {
   CheckCircle,
   Edit,
   Trash2,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,11 @@ function UserDetailPage({ params }: UserDetailPageProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionLoading, setActionLoading] = useState<{
+    toggle: boolean;
+    deactivate: boolean;
+    delete: boolean;
+  }>({ toggle: false, deactivate: false, delete: false });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -64,6 +70,13 @@ function UserDetailPage({ params }: UserDetailPageProps) {
       fetchUser();
     }
   }, [params.id]);
+
+  // Helper function to determine if user is active
+  const isUserActive = (user: User) => {
+    return user.isActive !== false && 
+           user.status !== 'INACTIVE' && 
+           user.status !== 'SUSPENDED';
+  };
 
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
@@ -94,11 +107,11 @@ function UserDetailPage({ params }: UserDetailPageProps) {
   };
 
   const getStatusBadge = (user: User) => {
-    if (!user.isActive) {
+    if (!isUserActive(user)) {
       return (
         <Badge variant="destructive">
           <Ban className="h-3 w-3 mr-1" />
-          Inactive
+          {user.status === 'SUSPENDED' ? 'Suspended' : 'Inactive'}
         </Badge>
       );
     }
@@ -113,35 +126,73 @@ function UserDetailPage({ params }: UserDetailPageProps) {
   const handleToggleUserStatus = async () => {
     if (!user) return;
     
-    const action = user.isActive ? 'deactivate' : 'activate';
+    const action = isUserActive(user) ? 'deactivate' : 'activate';
     if (!confirm(`Are you sure you want to ${action} this user?`)) {
       return;
     }
 
+    setActionLoading(prev => ({ ...prev, toggle: true }));
     try {
-      await apiClient.users.updateStatus(user.id, { isActive: !user.isActive });
-      setUser(prev => prev ? { ...prev, isActive: !prev.isActive } : null);
+      await apiClient.users.updateStatus(user.id, { isActive: !isUserActive(user) });
+      setUser(prev => prev ? { ...prev, isActive: !isUserActive(prev) } : null);
       alert(`User ${action}d successfully`);
-    } catch (err) {
+    } catch (err: any) {
       console.error(`Failed to ${action} user:`, err);
-      alert(`Failed to ${action} user. Please try again.`);
+      alert(`Failed to ${action} user: ${err.message || 'Please try again.'}`);
+    } finally {
+      setActionLoading(prev => ({ ...prev, toggle: false }));
+    }
+  };
+
+  const handleDeactivateUser = async () => {
+    if (!user) return;
+    
+    if (!confirm(`Are you sure you want to deactivate this user?\n\nThis will:\n- Set the account as inactive\n- Prevent login access\n- Preserve all data and history\n- Allow reactivation later`)) {
+      return;
+    }
+
+    setActionLoading(prev => ({ ...prev, deactivate: true }));
+    try {
+      await apiClient.users.updateStatus(user.id, { isActive: false });
+      setUser(prev => prev ? { ...prev, isActive: false } : null);
+      alert('User account deactivated successfully');
+    } catch (err: any) {
+      console.error('Failed to deactivate user:', err);
+      alert(`Failed to deactivate user: ${err.message || 'Please try again.'}`);
+    } finally {
+      setActionLoading(prev => ({ ...prev, deactivate: false }));
     }
   };
 
   const handleDeleteUser = async () => {
     if (!user) return;
     
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    if (!confirm(`Are you sure you want to PERMANENTLY delete this user?\n\nWARNING: This action cannot be undone!\n\nThis will:\n- Permanently remove the user account\n- Delete all associated data\n- Remove access to all cooperatives`)) {
       return;
     }
 
+    setActionLoading(prev => ({ ...prev, delete: true }));
     try {
       await apiClient.users.remove(user.id);
-      alert('User deleted successfully');
+      alert('User deleted permanently');
       router.push('/users');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete user:', err);
-      alert('Failed to delete user. Please try again.');
+      
+      // Check for 404 errors or delete endpoint failures
+      const is404Error = err?.response?.status === 404 || 
+                        (err as any)?.status === 404 || 
+                        err?.message?.includes('404') || 
+                        err?.message?.includes('Cannot DELETE') ||
+                        err?.message?.includes('DELETE /api/v1/users');
+      
+      if (is404Error) {
+        alert('Delete functionality is not available on this server. Use deactivate instead.');
+      } else {
+        alert(`Failed to delete user: ${err.message || 'Please try again.'}`);
+      }
+    } finally {
+      setActionLoading(prev => ({ ...prev, delete: false }));
     }
   };
 
@@ -222,25 +273,44 @@ function UserDetailPage({ params }: UserDetailPageProps) {
               <Edit className="h-4 w-4 mr-2" />
               Edit User
             </Button>
-            <Button
-              variant={user.isActive ? "destructive" : "default"}
-              onClick={handleToggleUserStatus}
+            {isUserActive(user) ? (
+              <Button
+                variant="outline"
+                onClick={handleDeactivateUser}
+                disabled={actionLoading.deactivate || actionLoading.delete}
+              >
+                {actionLoading.deactivate ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Ban className="h-4 w-4 mr-2" />
+                )}
+                {actionLoading.deactivate ? 'Deactivating...' : 'Deactivate User'}
+              </Button>
+            ) : (
+              <Button
+                variant="default"
+                onClick={() => handleToggleUserStatus()}
+                disabled={actionLoading.toggle || actionLoading.delete}
+              >
+                {actionLoading.toggle ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                )}
+                {actionLoading.toggle ? 'Activating...' : 'Activate User'}
+              </Button>
+            )}
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteUser}
+              disabled={actionLoading.delete || actionLoading.deactivate || actionLoading.toggle}
             >
-              {user.isActive ? (
-                <>
-                  <Ban className="h-4 w-4 mr-1" />
-                  Deactivate
-                </>
+              {actionLoading.delete ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Activate
-                </>
+                <Trash2 className="h-4 w-4 mr-2" />
               )}
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteUser}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete User
+              {actionLoading.delete ? 'Deleting...' : 'Delete User'}
             </Button>
           </div>
         </div>

@@ -16,7 +16,8 @@ import {
     Calendar,
     Shield,
     User as UserIcon,
-    Trash2
+    Trash2,
+    Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { 
@@ -58,6 +59,11 @@ function UsersPage() {
     const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [actionLoading, setActionLoading] = useState<Record<string, {
+        toggle: boolean;
+        deactivate: boolean;
+        delete: boolean;
+    }>>({});
     const [filters, setFilters] = useState<UserFilters>({
         page: 1,
         limit: 20,
@@ -82,6 +88,7 @@ function UsersPage() {
                 ? usersResponse
                 : (usersResponse.data || usersResponse);
 
+            console.log('Raw user data sample:', userData?.[0]); // Debug log
             setUsers(userData as User[]);
             setStats(statsResponse as UserStats);
             setAnalytics(analyticsResponse as UserAnalytics);
@@ -107,6 +114,13 @@ function UsersPage() {
         fetchUsersAndAnalytics();
     }, [filters, fetchUsersAndAnalytics]);
 
+    // Helper function to determine if user is active
+    const isUserActive = (user: User) => {
+        return user.isActive !== false && 
+               user.status !== 'INACTIVE' && 
+               user.status !== 'SUSPENDED';
+    };
+
     const getRoleBadge = (role: UserRole) => {
         switch (role) {
             case 'SUPER_ADMIN':
@@ -130,10 +144,10 @@ function UsersPage() {
     };
 
     const getStatusBadge = (user: User) => {
-        if (!user.isActive) {
+        if (!isUserActive(user)) {
             return <Badge variant="destructive">
                 <Ban className="h-3 w-3 mr-1" />
-                Inactive
+                {user.status === 'SUSPENDED' ? 'Suspended' : 'Inactive'}
             </Badge>;
         }
         return <Badge variant="success">
@@ -143,30 +157,77 @@ function UsersPage() {
     };
 
     const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
-        const action = currentStatus ? 'deactivate' : 'activate';
+        const action = isUserActive({ isActive: currentStatus } as User) ? 'deactivate' : 'activate';
         if (!confirm(`Are you sure you want to ${action} this user?`)) {
             return;
         }
 
+        setActionLoading(prev => ({
+            ...prev,
+            [userId]: { ...prev[userId], toggle: true }
+        }));
+
         try {
-            await apiClient.users.updateStatus(userId, { isActive: !currentStatus });
+            await apiClient.users.updateStatus(userId, { isActive: !isUserActive({ isActive: currentStatus } as User) });
             // Refresh the users list
             setUsers(prev => prev.map(user =>
-                user.id === userId ? { ...user, isActive: !currentStatus } : user
+                user.id === userId ? { ...user, isActive: !isUserActive(user) } : user
             ));
             alert(`User ${action}d successfully`);
-        } catch (err) {
+        } catch (err: any) {
             console.error(`Failed to ${action} user:`, err);
-            alert(`Failed to ${action} user. Please try again.`);
+            alert(`Failed to ${action} user: ${err.message || 'Please try again.'}`);
+        } finally {
+            setActionLoading(prev => ({
+                ...prev,
+                [userId]: { ...prev[userId], toggle: false }
+            }));
         }
     };
 
-    const handleDeleteUser = async (userId: string, userName: string) => {
-        const confirmMessage = `Are you sure you want to permanently delete "${userName}"?\n\nThis action cannot be undone and will:\n- Remove the user account permanently\n- Delete all associated data\n- Remove access to all cooperatives`;
+    const handleDeactivateUser = async (userId: string, userName: string) => {
+        const confirmMessage = `Are you sure you want to deactivate "${userName}"?\n\nThis will:\n- Set the user account as inactive\n- Prevent the user from logging in\n- Preserve all user data and history\n- Allow reactivation later if needed`;
         
         if (!confirm(confirmMessage)) {
             return;
         }
+        
+        setActionLoading(prev => ({
+            ...prev,
+            [userId]: { ...prev[userId], deactivate: true }
+        }));
+        
+        try {
+            await apiClient.users.updateStatus(userId, { isActive: false });
+            // Update user in local state to show as deactivated
+            setUsers(prev => prev.map(user =>
+                user.id === userId ? { ...user, isActive: false } : user
+            ));
+            // Refresh analytics to update counts
+            fetchUsersAndAnalytics();
+            alert('User account deactivated successfully');
+        } catch (err: any) {
+            console.error('Failed to deactivate user:', err);
+            alert(`Failed to deactivate user: ${err.message || 'Please try again.'}`);
+        } finally {
+            setActionLoading(prev => ({
+                ...prev,
+                [userId]: { ...prev[userId], deactivate: false }
+            }));
+        }
+    };
+
+    const handleDeleteUser = async (userId: string, userName: string) => {
+        const confirmMessage = `Are you sure you want to PERMANENTLY delete "${userName}"?\n\nWARNING: This action cannot be undone!\n\nThis will:\n- Permanently remove the user account\n- Delete all associated data\n- Remove access to all cooperatives\n- Clean up room assignments`;
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
+        setActionLoading(prev => ({
+            ...prev,
+            [userId]: { ...prev[userId], delete: true }
+        }));
         
         try {
             await apiClient.users.remove(userId);
@@ -174,10 +235,27 @@ function UsersPage() {
             setUsers(prev => prev.filter(user => user.id !== userId));
             // Refresh analytics to update counts
             fetchUsersAndAnalytics();
-            alert('User deleted successfully');
-        } catch (err) {
+            alert('User deleted permanently');
+        } catch (err: any) {
             console.error('Failed to delete user:', err);
-            alert('Failed to delete user. Please try again.');
+            
+            // Check for 404 errors or delete endpoint failures
+            const is404Error = err?.response?.status === 404 || 
+                              (err as any)?.status === 404 || 
+                              err?.message?.includes('404') || 
+                              err?.message?.includes('Cannot DELETE') ||
+                              err?.message?.includes('DELETE /api/v1/users');
+            
+            if (is404Error) {
+                alert('Delete functionality is not available on this server. Use deactivate instead.');
+            } else {
+                alert(`Failed to delete user: ${err.message || 'Please try again.'}`);
+            }
+        } finally {
+            setActionLoading(prev => ({
+                ...prev,
+                [userId]: { ...prev[userId], delete: false }
+            }));
         }
     };
 
@@ -615,30 +693,49 @@ function UsersPage() {
                                                                 View
                                                             </Link>
                                                         </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant={user.isActive ? "destructive" : "default"}
-                                                            onClick={() => handleToggleUserStatus(user.id, user.isActive)}
-                                                        >
-                                                            {user.isActive ? (
-                                                                <>
+                                                        {isUserActive(user) ? (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => handleDeactivateUser(user.id, `${user.firstName} ${user.lastName}`)}
+                                                                disabled={actionLoading[user.id]?.deactivate}
+                                                                title="Deactivate user account"
+                                                            >
+                                                                {actionLoading[user.id]?.deactivate ? (
+                                                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                                                ) : (
                                                                     <Ban className="h-3 w-3 mr-1" />
-                                                                    Deactivate
-                                                                </>
-                                                            ) : (
-                                                                <>
+                                                                )}
+                                                                Deactivate
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="default"
+                                                                onClick={() => handleToggleUserStatus(user.id, isUserActive(user))}
+                                                                disabled={actionLoading[user.id]?.toggle}
+                                                                title="Reactivate user account"
+                                                            >
+                                                                {actionLoading[user.id]?.toggle ? (
+                                                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                                                ) : (
                                                                     <CheckCircle className="h-3 w-3 mr-1" />
-                                                                    Activate
-                                                                </>
-                                                            )}
-                                                        </Button>
+                                                                )}
+                                                                Activate
+                                                            </Button>
+                                                        )}
                                                         <Button
                                                             size="sm"
                                                             variant="destructive"
                                                             onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
+                                                            disabled={actionLoading[user.id]?.delete}
                                                             title="Delete user permanently"
                                                         >
-                                                            <Trash2 className="h-3 w-3 mr-1" />
+                                                            {actionLoading[user.id]?.delete ? (
+                                                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                                            ) : (
+                                                                <Trash2 className="h-3 w-3 mr-1" />
+                                                            )}
                                                             Delete
                                                         </Button>
                                                     </div>

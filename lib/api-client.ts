@@ -302,7 +302,8 @@ class ApiClient {
       (error.response?.data?.message?.includes("endpoint") ||
         error.response?.data?.message?.includes("route") ||
         error.config?.url?.includes("/payments/distribution") ||
-        error.config?.url?.includes("/balances/redistribute"))
+        error.config?.url?.includes("/balances/redistribute") ||
+        error.config?.url?.includes("/users/") && error.config?.method?.toUpperCase() === 'DELETE')
     );
   }
 
@@ -1107,7 +1108,7 @@ class ApiClient {
       this.get("/analytics/users", filters),
 
     /**
-     * Delete user
+     * Delete user (smart deletion with room cleanup)
      */
     remove: (id: string) => this.delete(`/users/${id}`),
   };
