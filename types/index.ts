@@ -268,6 +268,7 @@ export interface Tenant {
   email?: string;
   status: TenantStatus;
   cooperativeId: string;
+  roomNumber?: string;  // Added room number
   cooperative?: {
     id: string;
     name: string;
@@ -311,6 +312,7 @@ export interface CreateTenantRequest {
   lastName: string;
   email?: string;
   cooperativeId: string;
+  roomNumber?: string;
   notes?: string;
 }
 
@@ -321,6 +323,7 @@ export interface UpdateTenantRequest {
   email?: string;
   status?: TenantStatus;
   cooperativeId?: string;
+  roomNumber?: string;
   pin?: string;
 }
 
@@ -627,8 +630,33 @@ export interface PaymentStatsFilters {
 export interface TenantFilters extends BaseFilters {
   status?: TenantStatus;
   cooperativeId?: string;
+  roomNumber?: string;
   dateFrom?: string;
   dateTo?: string;
+}
+
+/**
+ * Room Management types
+ */
+export interface RemoveFromRoomRequest {
+  cooperativeId: string;
+  roomNumber: string;
+  reason?: string;
+}
+
+export interface AssignToRoomRequest {
+  cooperativeId: string;
+  roomNumber: string;
+  notes?: string;
+}
+
+export interface TransferTenantRequest {
+  fromCooperativeId: string;
+  fromRoomNumber: string;
+  toCooperativeId: string;
+  toRoomNumber: string;
+  reason?: string;
+  notes?: string;
 }
 
 /**
@@ -668,8 +696,8 @@ export interface CreateAccountRequestData {
 
 export interface ProcessAccountRequestData {
   action: 'APPROVE' | 'REJECT';
-  notes?: string;
-  rejectionReason?: string;
+  notes: string;
+  rejectionReason: string;
 }
 
 export interface AccountRequestFilters extends BaseFilters {

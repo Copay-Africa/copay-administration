@@ -159,8 +159,8 @@ function AccountRequestDetailPage() {
         try {
             await apiClient.accountRequests.process(request.id, {
                 action,
-                notes: notes.trim() || undefined,
-                rejectionReason: action === 'REJECT' ? rejectionReason.trim() : undefined
+                notes: notes.trim() || '',
+                rejectionReason: action === 'REJECT' ? rejectionReason.trim() : ''
             });
 
             // Update local state

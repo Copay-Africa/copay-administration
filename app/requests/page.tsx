@@ -110,8 +110,8 @@ function AccountRequestsPage() {
     try {
       await apiClient.accountRequests.process(requestId, {
         action,
-        notes,
-        rejectionReason
+        notes: notes || '',
+        rejectionReason: rejectionReason || ''
       });
       // Refresh the requests list
       await fetchRequestsAndStats();

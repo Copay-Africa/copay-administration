@@ -10,6 +10,9 @@ import type {
   TenantFilters,
   CreateTenantRequest,
   UpdateTenantRequest,
+  RemoveFromRoomRequest,
+  AssignToRoomRequest,
+  TransferTenantRequest,
   AccountRequestFilters,
   CreateAccountRequestData,
   ProcessAccountRequestData,
@@ -927,6 +930,68 @@ class ApiClient {
      * DELETE /api/v1/users/tenants/:id
      */
     remove: (id: string) => this.delete(`/users/tenants/${id}`),
+
+    /**
+     * Organization Admin: Get tenants for specific organization
+     * GET /api/v1/organization/tenants
+     */
+    getOrganizationTenants: (filters?: TenantFilters) =>
+      this.getPaginated("/organization/tenants", filters),
+
+    /**
+     * Organization Admin: Get organization tenant statistics
+     * GET /api/v1/organization/tenants/stats
+     */
+    getOrganizationStats: () => this.get("/organization/tenants/stats"),
+
+    /**
+     * Get tenants by room number within a cooperative
+     * GET /api/v1/users/tenants/room/:cooperativeId/:roomNumber
+     */
+    getByRoom: (cooperativeId: string, roomNumber: string) =>
+      this.get(`/users/tenants/room/${cooperativeId}/${roomNumber}`),
+
+    /**
+     * Remove tenant from specific room (unassign room)
+     * POST /api/v1/users/tenants/:id/remove-from-room
+     */
+    removeFromRoom: (tenantId: string, data: RemoveFromRoomRequest) =>
+      this.post(`/users/tenants/${tenantId}/remove-from-room`, data),
+
+    /**
+     * Assign tenant to room
+     * POST /api/v1/users/tenants/:id/assign-room
+     */
+    assignToRoom: (tenantId: string, data: AssignToRoomRequest) =>
+      this.post(`/users/tenants/${tenantId}/assign-room`, data),
+
+    /**
+     * Get all tenants in a specific cooperative
+     * GET /api/v1/users/tenants/cooperative/:cooperativeId
+     */
+    getByCooperative: (cooperativeId: string, filters?: TenantFilters) =>
+      this.getPaginated(`/users/tenants/cooperative/${cooperativeId}`, filters),
+
+    /**
+     * Transfer tenant between rooms/cooperatives
+     * POST /api/v1/users/tenants/:id/transfer
+     */
+    transfer: (tenantId: string, data: TransferTenantRequest) =>
+      this.post(`/users/tenants/${tenantId}/transfer`, data),
+
+    /**
+     * Get all tenants in a specific room
+     * GET /api/v1/users/tenants/room-tenants/:cooperativeId/:roomNumber
+     */
+    getRoomTenants: (cooperativeId: string, roomNumber: string) =>
+      this.get(`/users/tenants/room-tenants/${cooperativeId}/${roomNumber}`),
+
+    /**
+     * Get available rooms in a cooperative
+     * GET /api/v1/users/tenants/available-rooms/:cooperativeId
+     */
+    getAvailableRooms: (cooperativeId: string) =>
+      this.get(`/users/tenants/available-rooms/${cooperativeId}`),
   };
 
   /**

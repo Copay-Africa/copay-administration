@@ -2,21 +2,7 @@
  * Global type declarations for the Copay Admin application
  */
 
-// CSS Modules
-declare module '*.module.css' {
-  const classes: { [key: string]: string };
-  export default classes;
-}
-
-declare module '*.module.scss' {
-  const classes: { [key: string]: string };
-  export default classes;
-}
-
-declare module '*.module.sass' {
-  const classes: { [key: string]: string };
-  export default classes;
-}
+// Note: CSS Modules declarations removed as none are used in the project
 
 // Environment Variables
 declare namespace NodeJS {

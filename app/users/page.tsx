@@ -15,7 +15,8 @@ import {
     Mail,
     Calendar,
     Shield,
-    User as UserIcon
+    User as UserIcon,
+    Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import { 
@@ -157,6 +158,26 @@ function UsersPage() {
         } catch (err) {
             console.error(`Failed to ${action} user:`, err);
             alert(`Failed to ${action} user. Please try again.`);
+        }
+    };
+
+    const handleDeleteUser = async (userId: string, userName: string) => {
+        const confirmMessage = `Are you sure you want to permanently delete "${userName}"?\n\nThis action cannot be undone and will:\n- Remove the user account permanently\n- Delete all associated data\n- Remove access to all cooperatives`;
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
+        try {
+            await apiClient.users.remove(userId);
+            // Remove user from local state
+            setUsers(prev => prev.filter(user => user.id !== userId));
+            // Refresh analytics to update counts
+            fetchUsersAndAnalytics();
+            alert('User deleted successfully');
+        } catch (err) {
+            console.error('Failed to delete user:', err);
+            alert('Failed to delete user. Please try again.');
         }
     };
 
@@ -610,6 +631,15 @@ function UsersPage() {
                                                                     Activate
                                                                 </>
                                                             )}
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="destructive"
+                                                            onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
+                                                            title="Delete user permanently"
+                                                        >
+                                                            <Trash2 className="h-3 w-3 mr-1" />
+                                                            Delete
                                                         </Button>
                                                     </div>
                                                 </TableCell>
